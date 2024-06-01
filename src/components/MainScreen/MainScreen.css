@@ -1,0 +1,7 @@
+.mainScreen {
+  width: 40vw;
+  height: 300px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  background: #1e1e1e;
+}

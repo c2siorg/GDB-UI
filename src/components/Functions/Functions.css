@@ -1,0 +1,39 @@
+.functions-parent {
+  display: flex;
+  height: 70vh;
+  padding: 10px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--Gray-2, #4f4f4f);
+  background: #1e1e1e;
+}
+.functions-heading {
+  display: flex;
+  width: 302px;
+  padding: 6px 12px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  background: var(--primary-orange, #e88f40);
+}
+.functions {
+  /* width: 100%; */
+  display: flex;
+  padding: 10px;
+  height: 57vh;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 11px;
+  flex-shrink: 0;
+  border: 1px solid var(--Gray-2, #4f4f4f);
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+.functions a {
+  display: block; /* Ensure the anchor tags are block-level elements */
+  word-wrap: break-word; /* Allow long words to break and wrap onto the next line */
+  overflow-wrap: break-word; /* For better compatibility */
+  margin-bottom: 5px; /* Space between multiple links */
+  text-decoration: none; /* Optional: remove underline from links */
+}
