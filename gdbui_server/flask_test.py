@@ -1,5 +1,7 @@
 import unittest
 import json
+import tempfile
+import os
 from flask import Flask
 from flask_testing import TestCase # type: ignore
 from main import app  
@@ -10,19 +12,35 @@ class TestGDBRoutes(TestCase):
         return app
 
     def setUp(self):
+        # Create a temporary directory for compiling C++ programs
+        self.temp_dir = tempfile.TemporaryDirectory()
+
         # Compile a simple C++ program for testing
         compile_payload = {
             "code": "#include <iostream>\nint main() { std::cout << 'Hello, World!'; return 0; }",
-            "name": "test_program"
+            "name": "test_program",
+            "temp_dir": self.temp_dir.name  # Pass the temporary directory path
         }
         self.client.post('/compile', data=json.dumps(compile_payload), content_type='application/json')
 
+    def tearDown(self):
+        # Clean up the temporary directory
+        self.temp_dir.cleanup()
+
     def test_compile_code(self):
+        # Create a temporary directory for compiling the test program
+        temp_dir = tempfile.TemporaryDirectory()
+
         payload = {
             "code": "#include <iostream>\nint main() { std::cout << 'Hello, Universe!'; return 0; }",
-            "name": "test_program2"
+            "name": "test_program2",
+            "temp_dir": temp_dir.name  # Pass the temporary directory path
         }
         response = self.client.post('/compile', data=json.dumps(payload), content_type='application/json')
+
+        # Clean up the temporary directory
+        temp_dir.cleanup()
+
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json['success'])
 
