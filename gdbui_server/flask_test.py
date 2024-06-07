@@ -2,7 +2,7 @@ import unittest
 import json
 from flask import Flask
 from flask_testing import TestCase # type: ignore
-from gdbui_server.main import app  # Assuming your app is named main4.py
+from main import app  
 
 class TestGDBRoutes(TestCase):
     def create_app(self):
