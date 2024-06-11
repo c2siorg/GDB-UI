@@ -1,10 +1,9 @@
 import unittest
 import json
 import tempfile
-import os
 from flask import Flask
-from flask_testing import TestCase # type: ignore
-from main import app  
+from flask_testing import TestCase  
+from main import app
 
 class TestGDBRoutes(TestCase):
     def create_app(self):
@@ -12,35 +11,23 @@ class TestGDBRoutes(TestCase):
         return app
 
     def setUp(self):
-        # Create a temporary directory for compiling C++ programs
         self.temp_dir = tempfile.TemporaryDirectory()
 
-        # Compile a simple C++ program for testing
         compile_payload = {
             "code": "#include <iostream>\nint main() { std::cout << 'Hello, World!'; return 0; }",
             "name": "test_program",
-            "temp_dir": self.temp_dir.name  # Pass the temporary directory path
         }
         self.client.post('/compile', data=json.dumps(compile_payload), content_type='application/json')
 
     def tearDown(self):
-        # Clean up the temporary directory
         self.temp_dir.cleanup()
 
     def test_compile_code(self):
-        # Create a temporary directory for compiling the test program
-        temp_dir = tempfile.TemporaryDirectory()
-
         payload = {
             "code": "#include <iostream>\nint main() { std::cout << 'Hello, Universe!'; return 0; }",
             "name": "test_program2",
-            "temp_dir": temp_dir.name  # Pass the temporary directory path
         }
         response = self.client.post('/compile', data=json.dumps(payload), content_type='application/json')
-
-        # Clean up the temporary directory
-        temp_dir.cleanup()
-
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json['success'])
 
@@ -118,9 +105,65 @@ class TestGDBRoutes(TestCase):
 
     def test_memory_map(self):
         memory_map_payload = {
-           "name": "test_program"
+            "name": "test_program"
         }
         response = self.client.post('/memory_map', data=json.dumps(memory_map_payload), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json['success'])
+
+    def test_continue_execution(self):
+        continue_payload = {
+            "name": "test_program"
+        }
+        response = self.client.post('/continue', data=json.dumps(continue_payload), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json['success'])
+
+    def test_step_over(self):
+        step_over_payload = {
+            "name": "test_program"
+        }
+        response = self.client.post('/step_over', data=json.dumps(step_over_payload), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json['success'])
+
+    def test_step_into(self):
+        step_into_payload = {
+            "name": "test_program"
+        }
+        response = self.client.post('/step_into', data=json.dumps(step_into_payload), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json['success'])
+
+    def test_step_out(self):
+        step_out_payload = {
+            "name": "test_program"
+        }
+        response = self.client.post('/step_out', data=json.dumps(step_out_payload), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json['success'])
+
+    def test_add_watchpoint(self):
+        add_watchpoint_payload = {
+            "variable": "var",
+            "name": "test_program"
+        }
+        response = self.client.post('/add_watchpoint', data=json.dumps(add_watchpoint_payload), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json['success'])
+
+    def test_delete_breakpoint(self):
+        set_breakpoint_payload = {
+            "location": "main",
+            "name": "test_program"
+        }
+        self.client.post('/set_breakpoint', data=json.dumps(set_breakpoint_payload), content_type='application/json')
+
+        delete_breakpoint_payload = {
+            "breakpoint_number": 1,
+            "name": "test_program"
+        }
+        response = self.client.post('/delete_breakpoint', data=json.dumps(delete_breakpoint_payload), content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json['success'])
 

@@ -278,5 +278,152 @@ def memory_map():
     
     return jsonify(response)
 
+@app.route('/continue', methods=['POST'])
+def continue_execution():
+    global program_name
+    data = request.get_json()
+    file = data.get('name')
+    if program_name != file:
+        start_gdb_session(f'{file}')
+
+    try:
+        result = execute_gdb_command("continue")
+        response = {
+            'success': True,
+            'result': result,
+            'code': "execute_gdb_command('continue')"
+        }
+    except Exception as e:
+        response = {
+            'success': False,
+            'error': str(e),
+            'code': "execute_gdb_command('continue')"
+        }
+    
+    return jsonify(response)
+
+@app.route('/step_over', methods=['POST'])
+def step_over():
+    global program_name
+    data = request.get_json()
+    file = data.get('name')
+    if program_name != file:
+        start_gdb_session(f'{file}')
+
+    try:
+        result = execute_gdb_command("next")
+        response = {
+            'success': True,
+            'result': result,
+            'code': "execute_gdb_command('next')"
+        }
+    except Exception as e:
+        response = {
+            'success': False,
+            'error': str(e),
+            'code': "execute_gdb_command('next')"
+        }
+    
+    return jsonify(response)
+
+@app.route('/step_into', methods=['POST'])
+def step_into():
+    global program_name
+    data = request.get_json()
+    file = data.get('name')
+    if program_name != file:
+        start_gdb_session(f'{file}')
+
+    try:
+        result = execute_gdb_command("step")
+        response = {
+            'success': True,
+            'result': result,
+            'code': "execute_gdb_command('step')"
+        }
+    except Exception as e:
+        response = {
+            'success': False,
+            'error': str(e),
+            'code': "execute_gdb_command('step')"
+        }
+    
+    return jsonify(response)
+
+@app.route('/step_out', methods=['POST'])
+def step_out():
+    global program_name
+    data = request.get_json()
+    file = data.get('name')
+    if program_name != file:
+        start_gdb_session(f'{file}')
+
+    try:
+        result = execute_gdb_command("finish")
+        response = {
+            'success': True,
+            'result': result,
+            'code': "execute_gdb_command('finish')"
+        }
+    except Exception as e:
+        response = {
+            'success': False,
+            'error': str(e),
+            'code': "execute_gdb_command('finish')"
+        }
+    
+    return jsonify(response)
+
+@app.route('/add_watchpoint', methods=['POST'])
+def add_watchpoint():
+    global program_name
+    data = request.get_json()
+    variable = data.get('variable')
+    file = data.get('name')
+    if program_name != file:
+        start_gdb_session(f'{file}')
+
+    try:
+        result = execute_gdb_command(f"watch {variable}")
+        response = {
+            'success': True,
+            'result': result,
+            'code': f"execute_gdb_command('watch {variable}')"
+        }
+    except Exception as e:
+        response = {
+            'success': False,
+            'error': str(e),
+            'code': f"execute_gdb_command('watch {variable}')"
+        }
+    
+    return jsonify(response)
+
+@app.route('/delete_breakpoint', methods=['POST'])
+def delete_breakpoint():
+    global program_name
+    data = request.get_json()
+    breakpoint_number = data.get('breakpoint_number')
+    file = data.get('name')
+    if program_name != file:
+        start_gdb_session(f'{file}')
+
+    try:
+        result = execute_gdb_command(f"delete {breakpoint_number}")
+        response = {
+            'success': True,
+            'result': result,
+            'code': f"execute_gdb_command('delete {breakpoint_number}')"
+        }
+    except Exception as e:
+        response = {
+            'success': False,
+            'error': str(e),
+            'code': f"execute_gdb_command('delete {breakpoint_number}')"
+        }
+    
+    return jsonify(response)
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
