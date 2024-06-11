@@ -2,7 +2,7 @@ import unittest
 import json
 import tempfile
 from flask import Flask
-from flask_testing import TestCase  
+from flask_testing import TestCase
 from main import app
 
 class TestGDBRoutes(TestCase):
@@ -23,14 +23,18 @@ class TestGDBRoutes(TestCase):
         self.temp_dir.cleanup()
 
     def test_compile_code(self):
+        temp_dir = tempfile.TemporaryDirectory()
+        
         payload = {
             "code": "#include <iostream>\nint main() { std::cout << 'Hello, Universe!'; return 0; }",
             "name": "test_program2",
         }
         response = self.client.post('/compile', data=json.dumps(payload), content_type='application/json')
+        temp_dir.cleanup()
+        
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json['success'])
-
+        
     def test_gdb_command(self):
         gdb_payload = {
             "command": "info locals",
