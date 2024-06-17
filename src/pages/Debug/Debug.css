@@ -1,0 +1,28 @@
+.container {
+  display: flex;
+  justify-content: space-between;
+  /* align-items: flex-start; */
+  /* gap: 10px; */
+}
+.middle-component {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 25px;
+  width: 100%;
+  background: var(--Gray-1, #333);
+}
+.upper-part {
+  display: flex;
+  padding: 20px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  background: var(--Gray-1, #333);
+}
+.lower-part {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
