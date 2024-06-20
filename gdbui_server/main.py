@@ -2,12 +2,12 @@ from flask import Flask, request, jsonify
 from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
 import subprocess
+import os
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-# Initialize global variables to store the GDB controller and program name
 gdb_controller = None
 program_name = None
 
@@ -20,6 +20,9 @@ def execute_gdb_command(command):
         strm = strm + "\n " + str(rem.get('payload'))
     return strm.strip()
 
+def ensure_exe_extension(name):
+    return name if name.endswith('.exe') else name + '.exe'
+
 def start_gdb_session(program):
     global gdb_controller, program_name
     program_name = program
@@ -29,12 +32,12 @@ def start_gdb_session(program):
         raise RuntimeError(f"Failed to initialize GDB controller: {e}")
 
     try:
-        response = gdb_controller.write(f"-file-exec-and-symbols {program_name}.exe")
+        response = gdb_controller.write(f"-file-exec-and-symbols {os.path.join('output/', ensure_exe_extension(program_name))}")
         if response is None:
             raise RuntimeError("No response from GDB controller")
     except Exception as e:
         raise RuntimeError(f"Failed to set program file: {e}")
-
+    
     try:
         response = gdb_controller.write("run")
         if response is None:
@@ -77,13 +80,30 @@ def compile_code():
     with open(f'{name}.cpp', 'w') as file:
         file.write(code)
 
-    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'{name}.exe'], capture_output=True, text=True)
+    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
 
     if result.returncode == 0:
         program_name = None
         return jsonify({'success': True, 'output': 'Compilation successful.'})
     else:
         return jsonify({'success': False, 'output': result.stderr})
+
+@app.route('/upload_file', methods=['POST'])    
+def upload_file():
+    if 'file' not in request.files or 'name' not in request.form:
+        return jsonify({'success': False, 'error': 'No file or name provided'}), 400
+
+    file = request.files['file']
+    name = request.form['name']
+
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No selected file'}), 400
+
+    file_path = os.path.join('output/', ensure_exe_extension(name))
+    file.save(file_path)
+
+    return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})
+
 
 @app.route('/set_breakpoint', methods=['POST'])
 def set_breakpoint():
