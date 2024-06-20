@@ -1,0 +1,21 @@
+.header {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto; /* Centers the element horizontally */
+
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.head {
+  display: flex;
+  width: 90vw;
+  justify-content: space-between;
+  align-items: center;
+}
+
+img {
+  width: 111px;
+  height: 62px;
+  flex-shrink: 0;
+}
