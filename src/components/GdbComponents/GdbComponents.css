@@ -3,6 +3,32 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
+  width: 42vw;
+}
+
+.gdb-header {
+  display: flex;
+  align-items: flex-start;
+}
+
+.gdb-content {
   width: 40vw;
-  border: 2px solid white;
+}
+.gdb-header-content {
+  display: flex;
+  padding: 6px 12px;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid var(--Gray-2, #4f4f4f);
+
+  color: #fff;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.active {
+  font-weight: bold;
+  background: var(--primary-orange, #e88f40);
 }

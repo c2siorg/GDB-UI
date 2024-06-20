@@ -5,21 +5,19 @@ import "./Terminal.css";
 
 const TerminalComp = () => {
   return (
-    <div>
+    <div className="terminal">
       TerminalComp
-      <div className="terminal">
-        <ReactTerminal
-          themes={{
-            "my-custom-theme": {
-              themeBGColor: "#000",
-              themeToolbarColor: "#DBDBDB",
-              themeColor: "#FFFEFC",
-              themePromptColor: "#a917a8",
-            },
-          }}
-          theme="my-custom-theme"
-        />
-      </div>
+      <ReactTerminal
+        themes={{
+          "my-custom-theme": {
+            themeBGColor: "#000",
+            themeToolbarColor: "#DBDBDB",
+            themeColor: "#FFFEFC",
+            themePromptColor: "#a917a8",
+          },
+        }}
+        theme="my-custom-theme"
+      />
     </div>
   );
 };

@@ -1,5 +1,8 @@
 .terminal {
-  width: 800px;
+  width: 55vw;
   height: 234px;
   flex-shrink: 0;
+  padding-left: 30px;
+  padding-right: 30px;
+  padding-bottom: 50px;
 }
