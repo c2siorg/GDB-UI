@@ -4,6 +4,7 @@ import tempfile
 from flask import Flask
 from flask_testing import TestCase
 from unittest import mock
+from io import BytesIO
 from main import app
 import os
 
@@ -26,39 +27,32 @@ class TestGDBRoutes(TestCase):
 
 
     def test_compile_code(self):
-        # Mock the os.makedirs to avoid creating actual directories
         with mock.patch('os.makedirs') as mock_makedirs:
-            # Mock the post request to the compile endpoint
             with mock.patch.object(self.client, 'post') as mock_post:
-                # Set up the mock response
+            
                 mock_response = mock.Mock()
                 mock_response.status_code = 200
                 mock_response.json = {'output': 'Compilation successful', 'success': True}
                 mock_post.return_value = mock_response
 
-                # Define output directory
                 output_dir = os.path.join(self.temp_dir.name, 'output')
 
-                # Ensure the output directory exists (mocked)
                 if not os.path.exists(output_dir):
-                    os.makedirs(output_dir)  # This call is mocked
+                    os.makedirs(output_dir)  
 
-                # Use a relative path for the compilation to avoid the colon issue
                 rel_output_dir = os.path.relpath(output_dir, self.temp_dir.name)
-                rel_output_dir = rel_output_dir.replace("\\", "/")  # Ensure forward slashes
+                rel_output_dir = rel_output_dir.replace("\\", "/")  
 
                 payload = {
                     "code": '#include <iostream>\nint main() { std::cout << "Hello, Universe!"; return 0; }',
-                    "name": f"test_program2",  # Use the relative path with forward slashes
+                    "name": f"test_program2",  
                 }
 
                 response = self.client.post('/compile', data=json.dumps(payload), content_type='application/json')
-                print('opopop')
-                print(response.json['output'])
+                
                 self.assertEqual(response.status_code, 200)
                 self.assertTrue(response.json['success'])
 
-                # Assert that os.makedirs was called with the expected directory
                 mock_makedirs.assert_called_with(output_dir)
 
         
@@ -197,6 +191,61 @@ class TestGDBRoutes(TestCase):
         response = self.client.post('/delete_breakpoint', data=json.dumps(delete_breakpoint_payload), content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json['success'])
+        
+    @mock.patch('werkzeug.datastructures.FileStorage.save')
+    def test_upload_file(self, mock_save):
+        data = {
+            'file': (BytesIO(b"dummy file content"), 'test_program'),
+            'name': 'test_program'
+        }
+
+        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
+        
+        response_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response_data['success'])
+        self.assertIn('File uploaded successfully', response_data['message'])
+
+        mock_save.assert_called_once()
+
+        expected_path = 'output/test_program.exe'
+        self.assertEqual(response_data['file_path'], expected_path)
+
+    @mock.patch('werkzeug.datastructures.FileStorage.save')
+    def test_upload_file_no_file(self, mock_save):
+        
+        data = {'name': 'test_program'}
+        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
+        
+        response_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response_data['success'])
+        self.assertIn('No file or name provided', response_data['error'])
+
+    @mock.patch('werkzeug.datastructures.FileStorage.save')
+    def test_upload_file_no_name(self, mock_save):
+        
+        data = {'file': (BytesIO(b"dummy file content"), 'test_program')}
+        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
+        
+        response_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response_data['success'])
+        self.assertIn('No file or name provided', response_data['error'])
+
+    @mock.patch('werkzeug.datastructures.FileStorage.save')
+    def test_upload_file_empty_filename(self, mock_save):
+        
+        data = {
+            'file': (BytesIO(b"dummy file content"), ''),
+            'name': 'test_program'
+        }
+        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
+        
+        response_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response_data['success'])
+        self.assertIn('No selected file', response_data['error'])
 
 if __name__ == '__main__':
     unittest.main()
