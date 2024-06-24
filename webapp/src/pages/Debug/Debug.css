@@ -27,3 +27,15 @@
   align-items: flex-start;
   gap: 15px;
 }
+.right-part {
+  display: flex;
+
+  flex-direction: column;
+  gap: 10px;
+}
+.left-part {
+  display: flex;
+
+  flex-direction: column;
+  gap: 10px;
+}

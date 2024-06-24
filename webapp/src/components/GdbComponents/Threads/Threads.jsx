@@ -43,7 +43,7 @@ const data = [
 const Threads = () => {
   return (
     <div>
-      Threads
+      {/* Threads */}
       <div className="threads">
         <div className="threads-component">
           <div className="threads-component-part1">func</div>

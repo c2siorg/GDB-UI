@@ -14,7 +14,7 @@ const data = [
 const MemoryMap = () => {
   return (
     <div>
-      MemoryMap
+      {/* MemoryMap */}
       <div className="memoryMap">
         {data?.length > 0
           ? data.map((obj) => {
