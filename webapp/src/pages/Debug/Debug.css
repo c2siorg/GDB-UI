@@ -10,7 +10,7 @@
   align-items: center;
   gap: 25px;
   width: 100%;
-  background: var(--Gray-1, #333);
+  /* background: var(--Gray-1, #333); */
 }
 .upper-part {
   display: flex;
@@ -23,6 +23,7 @@
 }
 .lower-part {
   display: flex;
+  justify-content: space-between;
   align-items: flex-start;
   gap: 15px;
 }

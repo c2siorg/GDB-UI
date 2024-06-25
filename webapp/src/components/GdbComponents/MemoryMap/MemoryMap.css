@@ -1,0 +1,13 @@
+.memoryMap {
+  display: flex;
+  width: 644px;
+  height: 177px;
+  padding: 15px 20px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+
+  border: 1px solid var(--Gray-2, #4f4f4f);
+  background: #1e1e1e;
+  overflow-y: scroll;
+}

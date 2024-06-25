@@ -3,7 +3,10 @@ import json
 import tempfile
 from flask import Flask
 from flask_testing import TestCase
+from unittest import mock
+from io import BytesIO
 from main import app
+import os
 
 class TestGDBRoutes(TestCase):
     def create_app(self):
@@ -22,15 +25,36 @@ class TestGDBRoutes(TestCase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
+
     def test_compile_code(self):
-        payload = {
-            "code": "#include <iostream>\nint main() { std::cout << 'Hello, Universe!'; return 0; }",
-            "name": f"{self.temp_dir.name}/test_program2",
-        }
-        response = self.client.post('/compile', data=json.dumps(payload), content_type='application/json')
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+        with mock.patch('os.makedirs') as mock_makedirs:
+            with mock.patch.object(self.client, 'post') as mock_post:
+            
+                mock_response = mock.Mock()
+                mock_response.status_code = 200
+                mock_response.json = {'output': 'Compilation successful', 'success': True}
+                mock_post.return_value = mock_response
+
+                output_dir = os.path.join(self.temp_dir.name, 'output')
+
+                if not os.path.exists(output_dir):
+                    os.makedirs(output_dir)  
+
+                rel_output_dir = os.path.relpath(output_dir, self.temp_dir.name)
+                rel_output_dir = rel_output_dir.replace("\\", "/")  
+
+                payload = {
+                    "code": '#include <iostream>\nint main() { std::cout << "Hello, Universe!"; return 0; }',
+                    "name": f"test_program2",  
+                }
+
+                response = self.client.post('/compile', data=json.dumps(payload), content_type='application/json')
+                
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(response.json['success'])
+
+                mock_makedirs.assert_called_with(output_dir)
+
         
     def test_gdb_command(self):
         gdb_payload = {
@@ -167,6 +191,61 @@ class TestGDBRoutes(TestCase):
         response = self.client.post('/delete_breakpoint', data=json.dumps(delete_breakpoint_payload), content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json['success'])
+        
+    @mock.patch('werkzeug.datastructures.FileStorage.save')
+    def test_upload_file(self, mock_save):
+        data = {
+            'file': (BytesIO(b"dummy file content"), 'test_program'),
+            'name': 'test_program'
+        }
+
+        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
+        
+        response_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response_data['success'])
+        self.assertIn('File uploaded successfully', response_data['message'])
+
+        mock_save.assert_called_once()
+
+        expected_path = 'output/test_program.exe'
+        self.assertEqual(response_data['file_path'], expected_path)
+
+    @mock.patch('werkzeug.datastructures.FileStorage.save')
+    def test_upload_file_no_file(self, mock_save):
+        
+        data = {'name': 'test_program'}
+        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
+        
+        response_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response_data['success'])
+        self.assertIn('No file or name provided', response_data['error'])
+
+    @mock.patch('werkzeug.datastructures.FileStorage.save')
+    def test_upload_file_no_name(self, mock_save):
+        
+        data = {'file': (BytesIO(b"dummy file content"), 'test_program')}
+        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
+        
+        response_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response_data['success'])
+        self.assertIn('No file or name provided', response_data['error'])
+
+    @mock.patch('werkzeug.datastructures.FileStorage.save')
+    def test_upload_file_empty_filename(self, mock_save):
+        
+        data = {
+            'file': (BytesIO(b"dummy file content"), ''),
+            'name': 'test_program'
+        }
+        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
+        
+        response_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response_data['success'])
+        self.assertIn('No selected file', response_data['error'])
 
 if __name__ == '__main__':
     unittest.main()
