@@ -1,0 +1,24 @@
+.function-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--Gray-2, #4f4f4f);
+  padding: 10px 10px 10px 10px;
+}
+.function-bottom-heading {
+  display: flex;
+  width: 321px;
+  padding: 6px 12px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  background: var(--primary-orange, #e88f40);
+}
+.function-bottom-container {
+  display: flex;
+  width: 322px;
+  height: 25px;
+  padding: 5px 10px;
+  justify-content: space-between;
+  align-items: center;
+}

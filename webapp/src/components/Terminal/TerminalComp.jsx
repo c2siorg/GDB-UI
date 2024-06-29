@@ -11,7 +11,7 @@ const TerminalComp = () => {
         themes={{
           "my-custom-theme": {
             themeBGColor: "#000",
-            themeToolbarColor: "#DBDBDB",
+            themeToolbarColor: "#000",
             themeColor: "#FFFEFC",
             themePromptColor: "#a917a8",
           },

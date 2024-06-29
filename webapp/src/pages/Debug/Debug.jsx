@@ -8,6 +8,8 @@ import Stack from "../../components/Stack/Stack";
 import TerminalComp from "../../components/Terminal/TerminalComp";
 import GdbComponents from "../../components/GdbComponents/GdbComponents";
 import Breakpoint from "../../components/Breakpoint/Breakpoint";
+import StackBottom from "../../components/StackBottom/StackBottom";
+import FunctionsBottom from "../../components/FunctionsBottom/FunctionsBottom";
 
 const Debug = () => {
   return (
@@ -15,7 +17,10 @@ const Debug = () => {
       <Header />
       <DebugHeader />
       <div className="container">
-        <Functions />
+        <div className="left-part">
+          <Functions />
+          <FunctionsBottom />
+        </div>
         <div className="middle-component">
           <div className="upper-part">
             <MainScreen />
@@ -26,7 +31,10 @@ const Debug = () => {
             <Breakpoint />
           </div>
         </div>
-        <Stack />
+        <div className="right-part">
+          <Stack />
+          <StackBottom />
+        </div>
       </div>
     </div>
   );

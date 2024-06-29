@@ -23,7 +23,7 @@ const data = [
 const BreakPoints = () => {
   return (
     <div>
-      BreakPoints
+      {/* BreakPoints */}
       <div className="breakpoints">
         {data?.length > 0
           ? data.map((obj) => {

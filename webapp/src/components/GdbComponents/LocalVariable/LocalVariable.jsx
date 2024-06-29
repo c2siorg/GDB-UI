@@ -4,7 +4,7 @@ import "./LocalVariable.css";
 const LocalVariable = () => {
   return (
     <div>
-      LocalVariable
+      {/* LocalVariable */}
       <div className="localVariable">
         <a>RAD_T 0.214124123 const double</a>
         <a>angle 380 double</a>
