@@ -30,10 +30,14 @@ jobs:
           cd webapp
           npm install
 
-      - name: Run npm tests
+      - name: Run npm tests with coverage
         run: |
           cd webapp
           npx vitest --coverage.enabled true
-      - name: "Report Coverage"
+
+      - name: Report Coverage
         if: always()
         uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          coverage-file: ./coverage/coverage-final.json # Adjust this path as per Vitest output
+          output-directory: ./webapp # Directory to store the coverage report
