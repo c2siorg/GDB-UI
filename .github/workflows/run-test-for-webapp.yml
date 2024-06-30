@@ -33,4 +33,4 @@ jobs:
       - name: Run npm tests
         run: |
           cd webapp
-          vitest
+          npx vitest --coverage.enabled true
