@@ -7,8 +7,8 @@ const Breakpoint = () => {
       <div className="add-breakpoint">Add Breakpoint</div>
       <div className="lower-breakpoint">
         <div className="line-breakpoint">
-          <label>Line</label>
-          <input type="text" name="" id="breakpoint-line" />
+          <a>Line</a>
+          <input type="text" name="" id="" />
         </div>
         <div className="line-breakpoint">
           <a>Function</a>
