@@ -8,8 +8,10 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/setupTests.js",
-    test: {
-      include: ["src/**/*.{test,spec}.{js,ts}"],
-    },
+    include: ["src/**/*.{test,spec}.{js,ts}"], // Moved out of the nested test object
+  },
+  server: {
+    host: "0.0.0.0",
+    port: 5173,
   },
 });
