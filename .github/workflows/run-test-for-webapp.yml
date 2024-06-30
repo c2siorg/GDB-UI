@@ -33,4 +33,4 @@ jobs:
       - name: Run npm tests
         run: |
           cd webapp
-          npm run test
+          npx vitest
