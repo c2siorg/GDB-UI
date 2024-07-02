@@ -1,0 +1,36 @@
+name: Run NPM Tests on Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-npm:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Fetch pull request changes
+        run: |
+          git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge:pr
+          git checkout pr
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install npm dependencies
+        run: |
+          cd webapp
+          npm install
+
+      - name: Run npm tests with coverage
+        run: |
+          cd webapp
+          npx vitest --coverage.enabled true
