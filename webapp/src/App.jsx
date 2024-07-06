@@ -11,9 +11,11 @@ import Header from "./components/Header/Header";
 
 const App = () => {
   const [isDarkMode, setDarkMode] = useState("dark");
+  const [dark, setDark] = useState(false);
 
   const toggleDarkMode = () => {
     setDarkMode((isDarkMode) => (isDarkMode === "dark" ? "light" : "dark"));
+    setDark(!dark);
   };
 
   useEffect(() => {
@@ -21,7 +23,11 @@ const App = () => {
   }, [isDarkMode]);
   return (
     <div>
-      <Header isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+      <Header
+        isDarkMode={isDarkMode}
+        toggleDarkMode={toggleDarkMode}
+        dark={dark}
+      />
 
       <Routes>
         <Route path="debug" element={<Debug />}>

@@ -4,7 +4,7 @@ import c2si from "../../assets/c2si.png";
 import { Link } from "react-router-dom";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
 
-const Header = ({ isDarkMode, toggleDarkMode }) => {
+const Header = ({ isDarkMode, toggleDarkMode, dark }) => {
   return (
     <div className="header">
       <div className="head">
@@ -15,7 +15,7 @@ const Header = ({ isDarkMode, toggleDarkMode }) => {
           <div className="darkmode">
             <DarkModeSwitch
               style={{ marginBottom: "2rem" }}
-              checked={isDarkMode}
+              checked={dark}
               onChange={toggleDarkMode}
               size={20}
             />
