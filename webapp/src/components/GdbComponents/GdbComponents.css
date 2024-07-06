@@ -21,7 +21,7 @@
   gap: 10px;
   border: 1px solid var(--Gray-2, #4f4f4f);
 
-  color: #fff;
+  color: var(--color);
   font-size: 14px;
   font-style: normal;
   font-weight: 400;

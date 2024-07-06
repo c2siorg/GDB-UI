@@ -1,15 +1,43 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --line-height: 1.5;
+  --font-weight: 400;
+  --color-scheme: light dark;
+  --color: rgba(255, 255, 255, 0.87);
+  --background-color: #242424;
+  --font-synthesis: none;
+  --text-rendering: optimizeLegibility;
+  --webkit-font-smoothing: antialiased;
+  --moz-osx-font-smoothing: grayscale;
+  --padding: 0 20px;
+  --footer-background-color: rgb(2, 12, 22);
+  --footer-light-background: #ffffff;
+  --footer-light-color: rgba(0, 0, 0, 0.87);
+}
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+[data-theme="light"] {
+  --color: rgba(0, 0, 0, 0.87);
+  --background-color: #ffffff;
+  --footer-background-color: var(--footer-light-background);
+  --footer-color: var(--footer-light-color);
+}
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  padding: 0 20px;
+[data-theme="dark"] {
+  --color: rgba(255, 255, 255, 0.87);
+  --background-color: #242424;
+  --footer-background-color: rgb(2, 12, 22);
+  --footer-color: rgba(255, 255, 255, 0.87);
+}
+
+body {
+  font-family: var(--font-family);
+  line-height: var(--line-height);
+  font-weight: var(--font-weight);
+  color: var(--color);
+  background-color: var(--background-color);
+  font-synthesis: var(--font-synthesis);
+  text-rendering: var(--text-rendering);
+  -webkit-font-smoothing: var(--webkit-font-smoothing);
+  -moz-osx-font-smoothing: var(--moz-osx-font-smoothing);
+  padding: var(--padding);
 }

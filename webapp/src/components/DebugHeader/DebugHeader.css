@@ -1,3 +1,24 @@
+:root {
+  --main-color: rgba(255, 255, 255, 0.87);
+  --component-background-color: #333333;
+  --component-light-background: #ffffff;
+}
+
+[data-theme="light"] {
+  --main-background-color: #ffffff;
+  --main-color: rgba(0, 0, 0, 0.87);
+}
+
+[data-theme="dark"] {
+  --main-background-color: #242424;
+  --main-color: rgba(255, 255, 255, 0.87);
+}
+
+body {
+  color: var(--main-color);
+  background-color: var(--main-background-color);
+}
+
 .parent-debug-header {
   display: flex;
   justify-content: center;
@@ -12,6 +33,11 @@
   justify-content: space-between;
   align-items: center;
   background: var(--Gray-1, #333);
+}
+[data-theme="light"] .debug-header {
+  background-color: var(--component-light-background);
+  color: var(--component-light-color);
+  border: 2px solid var(--Gray-1, #333);
 }
 .filename {
   display: flex;
@@ -52,10 +78,13 @@
 }
 
 .icon:hover {
-  border: 2px solid white; /* White border on hover */
+  border: 2px solid white;
   box-shadow: 0 0 0 1px white;
   padding: 3px;
-  /* margin: 2px; */
+}
+
+[data-theme="light"] .icon:hover {
+  border: 2px solid black;
 }
 
 .save-button {

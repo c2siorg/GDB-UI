@@ -1,3 +1,25 @@
+:root {
+  /* --main-background-color: #000000; Black background for the main screen */
+  --main-color: rgba(255, 255, 255, 0.87); /* White text color */
+  --component-background-color: #333333; /* Grey background for specific component */
+  --component-light-background: #ffffff; /* White background for specific component in light mode */
+}
+
+[data-theme="light"] {
+  --main-background-color: #ffffff; /* White background for main screen in light mode */
+  --main-color: rgba(0, 0, 0, 0.87); /* Black text color for light mode */
+}
+
+[data-theme="dark"] {
+  --main-background-color: #242424;
+  --main-color: rgba(255, 255, 255, 0.87); /* White text color for dark mode */
+}
+
+body {
+  color: var(--main-color);
+  background-color: var(--main-background-color);
+}
+
 .container {
   display: flex;
   justify-content: space-between;
@@ -19,7 +41,12 @@
   justify-content: center;
   align-items: center;
   gap: 20px;
-  background: var(--Gray-1, #333);
+  background-color: var(--component-background-color);
+}
+
+[data-theme="light"] .upper-part {
+  background-color: var(--component-light-background);
+  color: var(--component-light-color);
 }
 .lower-part {
   display: flex;

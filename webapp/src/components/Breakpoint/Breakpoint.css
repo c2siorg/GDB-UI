@@ -20,7 +20,7 @@
   align-items: flex-start;
   gap: 9px;
   border: 1px solid var(--Gray-2, #4f4f4f);
-  background: #1e1e1e;
+  /* background: #1e1e1e; */
 }
 
 .line-breakpoint {
