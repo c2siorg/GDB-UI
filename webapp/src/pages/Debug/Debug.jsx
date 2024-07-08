@@ -14,7 +14,6 @@ import FunctionsBottom from "../../components/FunctionsBottom/FunctionsBottom";
 const Debug = () => {
   return (
     <div>
-      <Header />
       <DebugHeader />
       <div className="container">
         <div className="left-part">

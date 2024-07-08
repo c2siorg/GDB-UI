@@ -6,7 +6,7 @@
   align-items: center;
   gap: 10px;
   border: 1px solid var(--Gray-2, #4f4f4f);
-  background: #1e1e1e;
+  /* background: #1e1e1e; */
 }
 .functions-heading {
   display: flex;
