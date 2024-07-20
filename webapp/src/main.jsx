@@ -7,12 +7,12 @@ import App from "./App";
 import "./index.css";
 
 ReactDOM.render(
-  <DataProvider>
-    <BrowserRouter>
+  <BrowserRouter>
+    <DataProvider>
       <React.StrictMode>
         <App />
       </React.StrictMode>
-    </BrowserRouter>
-  </DataProvider>,
+    </DataProvider>
+  </BrowserRouter>,
   document.getElementById("root")
 );

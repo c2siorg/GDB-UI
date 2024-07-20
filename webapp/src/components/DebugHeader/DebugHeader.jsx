@@ -8,12 +8,12 @@ import {
 import { IoReload } from "react-icons/io5";
 import { MdSkipNext, MdSkipPrevious } from "react-icons/md";
 import { BsArrowRightSquareFill } from "react-icons/bs";
-import { DataContext } from "../../context/DataContext";
+import { DataState } from "../../context/DataContext";
 
 import "./DebugHeader.css";
 
 const DebugHeader = () => {
-  const { refresh, setRefresh } = useContext(DataContext);
+  const { refresh, setRefresh } = DataState();
 
   return (
     <div className="parent-debug-header">
