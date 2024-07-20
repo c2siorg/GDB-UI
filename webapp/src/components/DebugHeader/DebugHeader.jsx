@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -8,10 +8,13 @@ import {
 import { IoReload } from "react-icons/io5";
 import { MdSkipNext, MdSkipPrevious } from "react-icons/md";
 import { BsArrowRightSquareFill } from "react-icons/bs";
+import { DataContext } from "../../context/DataContext";
 
 import "./DebugHeader.css";
 
 const DebugHeader = () => {
+  const { refresh, setRefresh } = useContext(DataContext);
+
   return (
     <div className="parent-debug-header">
       <div className="debug-header">
@@ -33,7 +36,9 @@ const DebugHeader = () => {
           <div className="filename-content">filename</div>
         </div>
         <div className="save">
-          <button className="save-button">Save</button>
+          <button className="save-button" onClick={() => setRefresh(!refresh)}>
+            {refresh ? "Saving.." : "Save"}
+          </button>
         </div>
       </div>
     </div>
