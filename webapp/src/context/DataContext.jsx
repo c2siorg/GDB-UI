@@ -17,18 +17,15 @@ export const DataProvider = ({ children }) => {
   const fetchData = useCallback(async () => {
     if (refresh) {
       try {
-        // Your data fetching logic here
         const stackResponse = await axios.get("/api/stack");
         const functionsResponse = await axios.get("/api/functions");
 
         setStack(stackResponse.data);
         setFunctions(functionsResponse.data);
 
-        // Reset refresh after data is fetched
         setRefresh(false);
       } catch (error) {
         console.error("Error fetching data:", error);
-        // Optional: set refresh to false on error as well
         setRefresh(false);
       }
     }
