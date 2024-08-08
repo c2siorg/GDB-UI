@@ -13,6 +13,8 @@ export const DataProvider = ({ children }) => {
   const [refresh, setRefresh] = useState(false);
   const [stack, setStack] = useState([]);
   const [functions, setFunctions] = useState([]);
+  const [infoBreakpointData, setInfoBreakpointData] = useState("");
+  const [memoryMap, setMemoryMap] = useState("");
 
   const fetchData = useCallback(async () => {
     if (refresh) {
@@ -36,7 +38,18 @@ export const DataProvider = ({ children }) => {
   }, [fetchData]);
 
   return (
-    <DataContext.Provider value={{ refresh, setRefresh, stack, functions }}>
+    <DataContext.Provider
+      value={{
+        refresh,
+        setRefresh,
+        stack,
+        functions,
+        infoBreakpointData,
+        setInfoBreakpointData,
+        memoryMap,
+        setMemoryMap,
+      }}
+    >
       {children}
     </DataContext.Provider>
   );

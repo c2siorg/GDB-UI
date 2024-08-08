@@ -11,7 +11,6 @@ const Breakpoint = () => {
 
   const handleBreakSave = async (e) => {
     e.preventDefault();
-    console.log("click");
     if (!breakLine && !breakFunction) {
       toast.error("Enter any of the field", {
         autoClose: 1000,
