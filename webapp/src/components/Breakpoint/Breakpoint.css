@@ -28,3 +28,13 @@
   align-items: center;
   gap: 28px;
 }
+
+.save-button {
+  display: flex;
+  padding: 4px 8px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 2px;
+  background: var(--primary-orange, #e88f40);
+}

@@ -19,6 +19,7 @@
     "react-icons": "^5.2.1",
     "react-router-dom": "^6.23.1",
     "react-terminal": "^1.4.4",
+    "react-toastify": "^10.0.5",
     "react-toggle-dark-mode": "^1.1.1",
     "terminal-in-react": "^4.3.1"
   },
