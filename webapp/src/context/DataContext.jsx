@@ -19,12 +19,6 @@ export const DataProvider = ({ children }) => {
   const fetchData = useCallback(async () => {
     if (refresh) {
       try {
-        const stackResponse = await axios.get("/api/stack");
-        const functionsResponse = await axios.get("/api/functions");
-
-        setStack(stackResponse.data);
-        setFunctions(functionsResponse.data);
-
         setRefresh(false);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -43,7 +37,9 @@ export const DataProvider = ({ children }) => {
         refresh,
         setRefresh,
         stack,
+        setStack,
         functions,
+        setFunctions,
         infoBreakpointData,
         setInfoBreakpointData,
         memoryMap,
