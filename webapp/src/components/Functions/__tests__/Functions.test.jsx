@@ -1,11 +1,22 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import Functions from "../Functions.jsx"; // Adjust the import path as per your project structure
+import Functions from "../Functions.jsx";
+import { vi } from "vitest";
 
-test("renders Functions component with correct heading and function names", () => {
+vi.mock("../../../context/DataContext.jsx", () => ({
+  DataState: () => ({
+    refresh: false,
+    functions: [],
+    setFunctions: vi.fn(),
+  }),
+}));
+
+test("renders Functions component with correct heading", () => {
   render(<Functions />);
 
-  // Assert the presence of the heading
   const headingElement = screen.getByText(/Functions/i);
   expect(headingElement).toBeInTheDocument();
+
+  const functionElements = screen.queryAllByRole("link");
+  expect(functionElements).toHaveLength(0);
 });
