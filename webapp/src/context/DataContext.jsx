@@ -13,22 +13,15 @@ export const DataProvider = ({ children }) => {
   const [refresh, setRefresh] = useState(false);
   const [stack, setStack] = useState([]);
   const [functions, setFunctions] = useState([]);
+  const [infoBreakpointData, setInfoBreakpointData] = useState("");
+  const [memoryMap, setMemoryMap] = useState("");
 
   const fetchData = useCallback(async () => {
     if (refresh) {
       try {
-        // Your data fetching logic here
-        const stackResponse = await axios.get("/api/stack");
-        const functionsResponse = await axios.get("/api/functions");
-
-        setStack(stackResponse.data);
-        setFunctions(functionsResponse.data);
-
-        // Reset refresh after data is fetched
         setRefresh(false);
       } catch (error) {
         console.error("Error fetching data:", error);
-        // Optional: set refresh to false on error as well
         setRefresh(false);
       }
     }
@@ -39,7 +32,20 @@ export const DataProvider = ({ children }) => {
   }, [fetchData]);
 
   return (
-    <DataContext.Provider value={{ refresh, setRefresh, stack, functions }}>
+    <DataContext.Provider
+      value={{
+        refresh,
+        setRefresh,
+        stack,
+        setStack,
+        functions,
+        setFunctions,
+        infoBreakpointData,
+        setInfoBreakpointData,
+        memoryMap,
+        setMemoryMap,
+      }}
+    >
       {children}
     </DataContext.Provider>
   );
