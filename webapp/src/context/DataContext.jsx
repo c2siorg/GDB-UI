@@ -10,6 +10,8 @@ import axios from "axios";
 export const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
+  const [isDarkMode, setDarkMode] = useState("dark");
+  const [dark, setDark] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [stack, setStack] = useState([]);
   const [functions, setFunctions] = useState([]);
@@ -44,6 +46,10 @@ export const DataProvider = ({ children }) => {
         setInfoBreakpointData,
         memoryMap,
         setMemoryMap,
+        isDarkMode,
+        setDarkMode,
+        dark,
+        setDark,
       }}
     >
       {children}

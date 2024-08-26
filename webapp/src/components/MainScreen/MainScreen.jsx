@@ -1,11 +1,22 @@
 import React from "react";
 import "./MainScreen.css";
+import Editor from "@monaco-editor/react";
+import { DataState } from "../../context/DataContext";
 
 const MainScreen = () => {
+  const { isDarkMode } = DataState();
   return (
     <div>
       MainScreen
-      <div className="mainScreen"></div>
+      <div className="mainScreen">
+        <Editor
+          height="90vh"
+          className="mainScreen"
+          defaultLanguage="Cpp"
+          defaultValue="// some comment"
+          theme={isDarkMode === "dark" ? "vs-dark" : "vs"}
+        />
+      </div>
     </div>
   );
 };

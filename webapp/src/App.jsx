@@ -8,10 +8,10 @@ import MemoryMap from "./components/GdbComponents/MemoryMap/MemoryMap";
 import BreakPoints from "./components/GdbComponents/BreakPoints/BreakPoints";
 import Footer from "./components/Footer/Footer";
 import Header from "./components/Header/Header";
+import { DataState } from "./context/DataContext";
 
 const App = () => {
-  const [isDarkMode, setDarkMode] = useState("dark");
-  const [dark, setDark] = useState(false);
+  const { setDark, dark, isDarkMode, setDarkMode } = DataState();
 
   const toggleDarkMode = () => {
     setDarkMode((isDarkMode) => (isDarkMode === "dark" ? "light" : "dark"));
