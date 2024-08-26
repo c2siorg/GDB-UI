@@ -12,7 +12,7 @@ const MainScreen = () => {
         <Editor
           height="90vh"
           className="mainScreen"
-          defaultLanguage="Cpp"
+          defaultLanguage="cpp"
           defaultValue="// some comment"
           theme={isDarkMode === "dark" ? "vs-dark" : "vs"}
         />

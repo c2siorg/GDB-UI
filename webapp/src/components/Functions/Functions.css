@@ -6,6 +6,7 @@
   align-items: center;
   gap: 10px;
   border: 1px solid var(--Gray-2, #4f4f4f);
+
   /* background: #1e1e1e; */
 }
 .functions-heading {
@@ -22,13 +23,14 @@
   display: flex;
   padding: 10px;
   height: 87vh;
+  max-width: 20vw;
   flex-direction: column;
   align-items: flex-start;
   gap: 11px;
   flex-shrink: 0;
   border: 1px solid var(--Gray-2, #4f4f4f);
   overflow-y: scroll;
-  overflow-x: hidden;
+  overflow-x: scroll;
 }
 .functions a {
   display: block; /* Ensure the anchor tags are block-level elements */
