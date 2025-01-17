@@ -141,3 +141,7 @@ We welcome contributions from the community! To get started:
 **Please ensure your code adheres to our coding standards and is thoroughly tested before submitting your pull request.**
 
 
+## Design
+
+https://www.figma.com/proto/flJ4HBaH4QhF18RSKGOWwA/GDB-UI?type=design&node-id=111-1101&t=sDAc1dWc1LAfqpaT-0&scaling=min-zoom&page-id=0%3A1&starting-point-node-id=111%3A2956
+
