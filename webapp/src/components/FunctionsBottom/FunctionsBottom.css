@@ -4,6 +4,8 @@
   gap: 10px;
   border: 1px solid var(--Gray-2, #4f4f4f);
   padding: 10px 10px 10px 10px;
+  transform: scale(0.8) translate(-37px, -50px);
+ /* Move 50px left and 20px up */
 }
 .function-bottom-heading {
   display: flex;

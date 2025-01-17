@@ -28,11 +28,15 @@ body {
 }
 .debug-header {
   display: flex;
-  width: 90vw;
   padding: 10px;
   justify-content: space-between;
   align-items: center;
-  background: var(--Gray-1, #333);
+  background: var(--Gray-1, #050505);
+  position: relative;
+  top: 15px;
+  width:100%;
+  margin-left: 0px;
+  margin-right: 10px;
 }
 [data-theme="light"] .debug-header {
   background-color: var(--component-light-background);
@@ -47,7 +51,9 @@ body {
   border-radius: 42px;
   background: var(--Gray-2, #4f4f4f);
   box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.05) inset;
+  margin-left: -260px; /* Adjust the value as needed */
 }
+
 .filename-content {
   color: #fff;
   font-family: Montserrat;
@@ -90,10 +96,46 @@ body {
 
 .save-button {
   display: flex;
-  padding: 4px 8px;
+  padding: 10px 20px;
   justify-content: center;
   align-items: center;
   gap: 10px;
   border-radius: 2px;
   background: var(--primary-orange, #e88f40);
+  margin-left: -102px;
+  border: 2px solid #e88f40;
+
+}
+
+.add-button {
+  display: flex;
+  padding: 10px 20px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 2px;
+  background: var(--primary-orange, #e88f40);
+  margin-left: -102px;
+  border: -10px solid #e88f40;
+  position: relative;
+  right: -100px;
+}
+
+@media (max-width: 480px) {
+  .debug-header {
+    padding: 5px;
+  }
+
+  .filename {
+    padding: 4px 10px;
+  }
+
+  .icons, .arrows, .others {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .save-button, .add-button {
+    padding: 5px 10px;
+  }
 }

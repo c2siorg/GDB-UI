@@ -56,7 +56,7 @@ const Breakpoint = () => {
             onChange={(e) => setBreakFunction(e.target.value)}
           />
         </div>
-        <button className="save-button" onClick={handleBreakSave}>
+        <button className="add-button" onClick={handleBreakSave}>
           Add
         </button>
       </div>

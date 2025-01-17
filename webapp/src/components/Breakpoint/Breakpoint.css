@@ -3,8 +3,12 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
+  position: relative;
+  top: -100px;
 }
 .add-breakpoint {
+  position: absolute;
+  right:-400px;
   display: flex;
   padding: 6px 12px;
   align-items: flex-start;
@@ -13,6 +17,9 @@
 }
 
 .lower-breakpoint {
+  position: absolute; /* Make it independent of other components */
+  right: -460px; /* Adjust this value for desired placement */
+  top: 50px; /* Adjust this to control vertical positioning */
   display: flex;
   height: 177px;
   padding: 7px 10px;
@@ -20,8 +27,9 @@
   align-items: flex-start;
   gap: 9px;
   border: 1px solid var(--Gray-2, #4f4f4f);
-  /* background: #1e1e1e; */
+  margin-top: 0; /* Disable margin if using absolute positioning */
 }
+
 
 .line-breakpoint {
   display: flex;
@@ -37,4 +45,21 @@
   gap: 10px;
   border-radius: 2px;
   background: var(--primary-orange, #e88f40);
+}
+
+
+/* Media Query for screens smaller than 768px */
+@media (max-width: 768px) {
+
+  .add-breakpoint {
+    position: static; /* Remove absolute positioning for natural stacking */
+    width: auto; /* Adjust width to content size */
+    align-self: center; /* Center the button in the layout */
+  }
+
+  .lower-breakpoint {
+    position: static; /* Remove absolute positioning for stacking */
+    width: auto; /* Adjust width to fit content */
+    align-self: center; /* Center the element in the layout */
+  }
 }

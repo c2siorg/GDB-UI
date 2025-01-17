@@ -9,7 +9,7 @@
   --text-rendering: optimizeLegibility;
   --webkit-font-smoothing: antialiased;
   --moz-osx-font-smoothing: grayscale;
-  --padding: 0 20px;
+  --padding: 0 0px;
   --footer-background-color: rgb(2, 12, 22);
   --footer-light-background: #ffffff;
   --footer-light-color: rgba(0, 0, 0, 0.87);
@@ -40,4 +40,7 @@ body {
   -webkit-font-smoothing: var(--webkit-font-smoothing);
   -moz-osx-font-smoothing: var(--moz-osx-font-smoothing);
   padding: var(--padding);
+  overflow-x: hidden !important;
+  height: 100%; /* Ensure the body takes up the full height of the viewport */
+  margin: 0 0 0 10px;
 }

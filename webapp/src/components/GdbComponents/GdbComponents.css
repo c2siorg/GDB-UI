@@ -4,6 +4,10 @@
   align-items: flex-start;
   gap: 10px;
   width: 42vw;
+  margin-bottom: -100px;
+  position: relative;
+  top: -90px;
+
 }
 
 .gdb-header {
@@ -31,4 +35,13 @@
 .active {
   font-weight: bold;
   background: var(--primary-orange, #e88f40);
+}
+
+@media (max-width: 768px) {
+  .gdb-components {
+    flex-direction: column; /* Stack items vertically */
+    align-items: center; /* Center items for small screens */
+    gap: 20px; /* Add spacing between elements */
+    width: auto; /* Adjust width to fit smaller screens */
+  }
 }

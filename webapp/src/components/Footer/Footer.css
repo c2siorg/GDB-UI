@@ -2,7 +2,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 30px;
+  margin-top: 200px;
+  margin-right: -7px;
+  margin-left: -7px;
+  margin-bottom: -7px;
   background-color: var(--footer-background-color);
   color: var(--footer-color); /* If you want to set text color */
 }
