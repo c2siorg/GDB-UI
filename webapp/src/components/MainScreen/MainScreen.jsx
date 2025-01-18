@@ -10,7 +10,7 @@ const MainScreen = () => {
       MainScreen
       <div className="mainScreen">
         <Editor
-          height="90vh"
+          height="54vh"
           className="mainScreen"
           defaultLanguage="cpp"
           defaultValue="// some comment"
