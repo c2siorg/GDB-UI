@@ -81,7 +81,6 @@ def compile_code():
         file.write(code)
 
     result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
-
     if result.returncode == 0:
         program_name = None
         return jsonify({'success': True, 'output': 'Compilation successful.'})
