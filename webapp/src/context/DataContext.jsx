@@ -16,6 +16,7 @@ export const DataProvider = ({ children }) => {
   const [functions, setFunctions] = useState([]);
   const [infoBreakpointData, setInfoBreakpointData] = useState("");
   const [memoryMap, setMemoryMap] = useState("");
+  const [textCode, setTextCode] = useState("");
   const [terminalOutput, setTerminalOutput] = useState("");
   const [commandPress, setCommandPress] = useState(true);
 
@@ -59,6 +60,8 @@ export const DataProvider = ({ children }) => {
         setCommandPress,
         commandPress,
         setTerminalOutput,
+        textCode,
+        setTextCode
       }}
     >
       {children}

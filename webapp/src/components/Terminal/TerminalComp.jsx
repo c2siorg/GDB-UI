@@ -17,6 +17,7 @@ const TerminalComp = () => {
         command: fullCommand,
         name: "program",
       });
+      console.log(data);
       return data["result"];
     } catch (error) {
       return "Error executing command";
