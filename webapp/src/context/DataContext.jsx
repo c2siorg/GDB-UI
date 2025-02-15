@@ -4,39 +4,39 @@ import React, {
   useEffect,
   useCallback,
   useContext,
-} from "react";
+} from 'react'
 
-export const DataContext = createContext();
+export const DataContext = createContext()
 
 export const DataProvider = ({ children }) => {
-  const [isDarkMode, setDarkMode] = useState("dark");
-  const [dark, setDark] = useState(false);
-  const [refresh, setRefresh] = useState(false);
-  const [stack, setStack] = useState([]);
-  const [functions, setFunctions] = useState([]);
-  const [infoBreakpointData, setInfoBreakpointData] = useState("");
-  const [memoryMap, setMemoryMap] = useState("");
-  const [terminalOutput, setTerminalOutput] = useState("");
-  const [commandPress, setCommandPress] = useState(true);
+  const [isDarkMode, setDarkMode] = useState('dark')
+  const [dark, setDark] = useState(false)
+  const [refresh, setRefresh] = useState(false)
+  const [stack, setStack] = useState([])
+  const [functions, setFunctions] = useState([])
+  const [infoBreakpointData, setInfoBreakpointData] = useState('')
+  const [memoryMap, setMemoryMap] = useState('')
+  const [terminalOutput, setTerminalOutput] = useState('')
+  const [commandPress, setCommandPress] = useState(true)
 
   const fetchData = useCallback(async () => {
     if (refresh) {
       try {
-        setRefresh(false);
+        setRefresh(false)
       } catch (error) {
-        console.error("Error fetching data:", error);
-        setRefresh(false);
+        console.error('Error fetching data:', error)
+        setRefresh(false)
       }
     }
-  }, [refresh]);
+  }, [refresh])
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchData()
+  }, [fetchData])
 
   const runCommandInTerminal = (command) => {
-    setTerminalOutput(command);
-  };
+    setTerminalOutput(command)
+  }
 
   return (
     <DataContext.Provider
@@ -63,11 +63,11 @@ export const DataProvider = ({ children }) => {
     >
       {children}
     </DataContext.Provider>
-  );
-};
+  )
+}
 
 export const DataState = () => {
-  return useContext(DataContext);
-};
+  return useContext(DataContext)
+}
 
-export default DataProvider;
+export default DataProvider

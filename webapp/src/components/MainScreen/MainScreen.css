@@ -6,7 +6,7 @@
   background: #1e1e1e;
 }
 
-[data-theme="light"] .mainScreen {
+[data-theme='light'] .mainScreen {
   background-color: white;
   border: 2px solid black;
 }

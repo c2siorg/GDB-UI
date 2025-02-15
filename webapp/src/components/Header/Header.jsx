@@ -1,8 +1,8 @@
-import React from "react";
-import "./Header.css";
-import c2si from "../../assets/c2si.png";
-import { Link } from "react-router-dom";
-import { DarkModeSwitch } from "react-toggle-dark-mode";
+import React from 'react'
+import './Header.css'
+import c2si from '../../assets/c2si.png'
+import { Link } from 'react-router-dom'
+import { DarkModeSwitch } from 'react-toggle-dark-mode'
 
 const Header = ({ isDarkMode, toggleDarkMode, dark }) => {
   return (
@@ -14,7 +14,7 @@ const Header = ({ isDarkMode, toggleDarkMode, dark }) => {
         <div className="login">
           <div className="darkmode">
             <DarkModeSwitch
-              style={{ marginBottom: "2rem" }}
+              style={{ marginBottom: '2rem' }}
               checked={dark}
               onChange={toggleDarkMode}
               size={20}
@@ -24,7 +24,7 @@ const Header = ({ isDarkMode, toggleDarkMode, dark }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

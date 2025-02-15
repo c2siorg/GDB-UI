@@ -1,5 +1,5 @@
 // Import jest-dom to extend Jest with custom matchers for DOM node assertions
-import "@testing-library/jest-dom";
+import '@testing-library/jest-dom'
 
 // Optional: Configure or set up global settings if needed
 
