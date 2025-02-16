@@ -206,28 +206,33 @@ For production deployment, follow these guidelines:
 
 - **Docker:** Use Docker Compose to deploy a stable environment.
 
-- **Environment Variables:** Configure environment-specific variables as needed.
-
 - **CI/CD Pipeline:** Integrate with our CI/CD pipeline for automated testing and deployment.
 
 ---
 
-## 🛠 Environment Variables Example
+## 🛠 Linting and Formatting
 
-Create an `.env` file at the root of the project with the following example configuration:
-
-```env
-# Server Configuration
-PORT=3000
-DEBUG_MODE=false
-
-# Client Configuration
-REACT_APP_API_URL=http://localhost:8000
-
-# Additional configuration variables can be added here
 ```
-Ensure sensitive information is managed securely using environment variable management tools or secrets managers.
+## for frontend
+cd webapp
+npm run lint           # for check lint
+npm run lint:fix       # for fix lint
+npm run format:check   # for check format
+npm run format         # for fix formatting
 
+
+## for backend
+cd gdbui_server
+
+make lint
+make format
+
+and if you want to do mannually 
+
+ruff check --fix .     # for Run Ruff for Linting & Auto-Fixing
+flake8 .               # to check the linting errors and warnig
+ruff format .          # Format Code with Ruff
+```
 ---
 
 ## 🤝 Contributing
@@ -246,59 +251,31 @@ git clone https://github.com/your-username/GDB-UI.git
 git checkout -b feature-or-bugfix-name
 ```
 4. **Make your changes and write clear, descriptive commit messages.**
-
-
 5. **Push your branch to your fork:**
 ```
 git push origin feature-or-bugfix-name
 ```
-
 6. **Open a pull request:** on the main repository with a detailed description of your changes. 
-
 For further details, refer to our [CONTRIBUTING.md](CONTRIBUTING.md).
-
-
 ---
-
-
 ## 📜 Resource
-
 - Official GDB Documentation: [GDB Manual](README.md)
-
 - React Documentation: [React Docs](https://legacy.reactjs.org/docs/getting-started.html)
-
 - Python Documentation: [Python Docs](https://docs.python.org/3/)
-
 - Docker Documentation: [Docker Docs](https://docs.docker.com/get-started/)
-
 - Figma Design Prototype: [View Design](https://www.figma.com/proto/flJ4HBaH4QhF18RSKGOWwA/GDB-UI?type=design&node-id=111-1101&t=sDAc1dWc1LAfqpaT-0&scaling=min-zoom&page-id=0%3A1&starting-point-node-id=111%3A2956)
 ---
-
-
 ## 📜 License
-
 Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
-
        http://www.apache.org/licenses/LICENSE-2.0
-
 ---
-
-
 ## 📞 Support
-
 If you need help or have any questions, please consider the following support options:
-
 - **GitHub Issues:** Report bugs or request features via [GitHub Issues](https://github.com/c2siorg/GDB-UI/issues).
-
-
 - **Community Discussions:** Participate in discussions on our GitHub Discussions page.
-
 ---
 Thank you for choosing **GDB-UI**. We hope this tool enhances your debugging workflow and accelerates your development process. Happy debugging!
-
 #### Maintained with passion by the GDB-UI team.
-
 ---
-
