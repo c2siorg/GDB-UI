@@ -1,16 +1,11 @@
-import React, { useContext } from "react";
-import {
-  FaArrowLeft,
-  FaArrowRight,
-  FaForward,
-  FaSquare,
-} from "react-icons/fa6";
-import { IoReload } from "react-icons/io5";
-import { MdSkipNext, MdSkipPrevious } from "react-icons/md";
-import { BsArrowRightSquareFill } from "react-icons/bs";
-import { DataState } from "../../context/DataContext";
+import React, { useContext } from 'react'
+import { FaArrowLeft, FaArrowRight, FaForward, FaSquare } from 'react-icons/fa6'
+import { IoReload } from 'react-icons/io5'
+import { MdSkipNext, MdSkipPrevious } from 'react-icons/md'
+import { BsArrowRightSquareFill } from 'react-icons/bs'
+import { DataState } from '../../context/DataContext'
 import axios from "axios";
-import "./DebugHeader.css";
+import './DebugHeader.css'
 
 const DebugHeader = () => {
   const {
@@ -38,10 +33,10 @@ const DebugHeader = () => {
   }
 
   const handleRun = (command) => {
-    console.log("clicked");
-    setCommandPress(!commandPress);
-    setTerminalOutput(command);
-  };
+    console.log('clicked')
+    setCommandPress(!commandPress)
+    setTerminalOutput(command)
+  }
 
   return (
     <div className="parent-debug-header">
@@ -52,14 +47,14 @@ const DebugHeader = () => {
               className="icon"
               title="Previous"
               onClick={() => {
-                handleRun("previous");
+                handleRun('previous')
               }}
             />
             <FaArrowRight
               className="icon"
               title="Next"
               onClick={() => {
-                handleRun("next");
+                handleRun('next')
               }}
             />
           </div>
@@ -68,42 +63,42 @@ const DebugHeader = () => {
               className="icon"
               title="Run"
               onClick={() => {
-                handleRun("run");
+                handleRun('run')
               }}
             />
             <FaForward
               className="icon"
               title="Continue"
               onClick={() => {
-                handleRun("continue");
+                handleRun('continue')
               }}
             />
             <FaSquare
               className="icon"
               title="Stop"
               onClick={() => {
-                handleRun("stop");
+                handleRun('stop')
               }}
             />
             <MdSkipNext
               className="icon"
               title="Step"
               onClick={() => {
-                handleRun("step");
+                handleRun('step')
               }}
             />
             <MdSkipPrevious
               className="icon"
               title="Finish"
               onClick={() => {
-                handleRun("finish");
+                handleRun('finish')
               }}
             />
             <BsArrowRightSquareFill
               className="icon"
               title="Run"
               onClick={() => {
-                handleRun("step-out");
+                handleRun('step-out')
               }}
             />
           </div>
@@ -113,12 +108,12 @@ const DebugHeader = () => {
         </div>
         <div className="save">
           <button className="save-button" onClick={handleSave}>
-            {refresh ? "Saving.." : "Save"}
+            {refresh ? 'Saving..' : 'Save'}
           </button>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default DebugHeader;
+export default DebugHeader

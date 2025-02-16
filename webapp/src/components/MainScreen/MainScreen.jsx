@@ -1,8 +1,9 @@
-import React from "react";
-import "./MainScreen.css";
-import { useRef } from "react";
-import Editor from "@monaco-editor/react";
-import { DataState } from "../../context/DataContext";
+import React from 'react'
+import './MainScreen.css'
+import { useRef } from 'react';
+import Editor from '@monaco-editor/react'
+import { DataState } from '../../context/DataContext'
+
 
 const MainScreen = () => {
   const { isDarkMode, setTextCode } = DataState();
@@ -34,12 +35,12 @@ const MainScreen = () => {
           className="mainScreen"
           defaultLanguage="cpp"
           defaultValue="// some comment"
-          theme={isDarkMode === "dark" ? "vs-dark" : "vs"}
+          theme={isDarkMode === 'dark' ? 'vs-dark' : 'vs'}
           onChange={handleEdtorChange}
         />
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default MainScreen;
+export default MainScreen
