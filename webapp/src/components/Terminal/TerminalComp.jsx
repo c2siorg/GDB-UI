@@ -15,9 +15,11 @@ const TerminalComp = () => {
     try {
       const { data } = await axios.post('http://127.0.0.1:10000/gdb_command', {
         command: fullCommand,
+
         name: 'program',
       })
       return data['result']
+
     } catch (error) {
       return 'Error executing command'
     }

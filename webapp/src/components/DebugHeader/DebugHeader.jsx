@@ -4,7 +4,7 @@ import { IoReload } from 'react-icons/io5'
 import { MdSkipNext, MdSkipPrevious } from 'react-icons/md'
 import { BsArrowRightSquareFill } from 'react-icons/bs'
 import { DataState } from '../../context/DataContext'
-
+import axios from "axios";
 import './DebugHeader.css'
 
 const DebugHeader = () => {
@@ -14,7 +14,23 @@ const DebugHeader = () => {
     setTerminalOutput,
     setCommandPress,
     commandPress,
-  } = DataState()
+    textCode
+  } = DataState();
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setRefresh(!refresh)
+    try {
+      const { data } = await axios.post("http://127.0.0.1:10000/compile", {
+        code: textCode,
+        name: "name",
+      });
+      console.log(data)
+      return "success";
+    } catch (error) {
+      return "Failed to save File";
+    }
+  }
 
   const handleRun = (command) => {
     console.log('clicked')
@@ -91,7 +107,7 @@ const DebugHeader = () => {
           <div className="filename-content">filename</div>
         </div>
         <div className="save">
-          <button className="save-button" onClick={() => setRefresh(!refresh)}>
+          <button className="save-button" onClick={handleSave}>
             {refresh ? 'Saving..' : 'Save'}
           </button>
         </div>
