@@ -120,13 +120,18 @@ We welcome contributions to the GDB-UI project! To contribute, please follow the
 
 Please ensure your code adheres to our coding standards and includes tests where applicable.
 
+```markdown
 ## License
-This project is licensed under the MIT License. See the LICENSE file for more details.
 
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 ## Contact
 If you have any questions or need support, please reach out to the project maintainers:
 
-- **Deepak Jain**
-- **Shubh Mehta**
+-- [Shubh Mehta](https://github.com/Shubh942)
 
-You can also open an issue on the GitHub repository.
+## Design
+
+https://www.figma.com/proto/flJ4HBaH4QhF18RSKGOWwA/GDB-UI?type=design&node-id=111-1101&t=sDAc1dWc1LAfqpaT-0&scaling=min-zoom&page-id=0%3A1&starting-point-node-id=111%3A2956
+
+
+You can also open an issue on the [GitHub repository](https://github.com/c2siorg/GDB-UI/issues).
