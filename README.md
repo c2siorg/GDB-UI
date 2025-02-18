@@ -120,7 +120,6 @@ We welcome contributions to the GDB-UI project! To contribute, please follow the
 
 Please ensure your code adheres to our coding standards and includes tests where applicable.
 
-```markdown
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
