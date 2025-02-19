@@ -65,13 +65,9 @@ If you prefer a manual setup or cannot use Docker, follow these steps.
      ```
 
 ## Usage
-After setting up the project, you can access GDB-UI by navigating to [http://localhost:3000](http://localhost:3000) in your web browser. Here are some examples of how to use the application:
+After setting up the project, you can access GDB-UI by navigating to [http://localhost:3000](http://localhost:3000) in your web browser.
 
-- **Debugging a Program**: [Include a screenshot or GIF]
-- **Setting Breakpoints**: [Include a screenshot or GIF]
-- **Viewing Variables**: [Include a screenshot or GIF]
-
-For more detailed usage instructions, refer to the User Guide.
+For more detailed usage instructions, refer to the [User Guide](https://github.com/c2siorg/GSoC/blob/master/GSoC-2024/13-utkarsh-raj-13-WebiU-20-c2siorg-SCoRe-Lab-website.md?utm_source).
 
 ## Running Tests
 
