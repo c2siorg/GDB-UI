@@ -127,13 +127,12 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Contact
 If you have any questions or need support, please reach out to the project maintainers:
 
--- [Shubh Mehta](https://github.com/Shubh942)
-@Ammoniya
-Ammoniya Ammoniya
-@Abhishek2634
-Abhishek2634 Abhishek Farshwal
-@charithccmc
-charithccmc Charitha Madusanka
+- [Shubh Mehta](https://github.com/Shubh942)
+- [Ammoniya](https://github.com/Ammoniya)
+
+- [Abhishek Farshwal](https://github.com/AbhishekFarshwal) 
+- [@charithccmcb](https://github.com/charithccmcb)
+- [charithccmc](https://github.com/charithccmc)
 
 ## Design
 
