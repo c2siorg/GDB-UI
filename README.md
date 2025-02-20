@@ -235,17 +235,13 @@ git push origin feature-or-bugfix-name
 For further details, refer to our [CONTRIBUTING.md](CONTRIBUTING.md).
 ---
 ## 📜 Resource
+
 - Official GDB Documentation: [GDB Manual](README.md)
 - React Documentation: [React Docs](https://legacy.reactjs.org/docs/getting-started.html)
 - Python Documentation: [Python Docs](https://docs.python.org/3/)
 - Docker Documentation: [Docker Docs](https://docs.docker.com/get-started/)
 - Figma Design Prototype: [View Design](https://www.figma.com/proto/flJ4HBaH4QhF18RSKGOWwA/GDB-UI?type=design&node-id=111-1101&t=sDAc1dWc1LAfqpaT-0&scaling=min-zoom&page-id=0%3A1&starting-point-node-id=111%3A2956)
----
-## 📜 License
-Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-       http://www.apache.org/licenses/LICENSE-2.0
+
 ---
 ## 📞 Support
 If you need help or have any questions, please consider the following support options:
@@ -254,4 +250,5 @@ If you need help or have any questions, please consider the following support op
 ---
 Thank you for choosing **GDB-UI**. We hope this tool enhances your debugging workflow and accelerates your development process. Happy debugging!
 #### Maintained with passion by the GDB-UI team.
+
 ---
