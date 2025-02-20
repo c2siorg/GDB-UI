@@ -140,30 +140,6 @@ For a streamlined development workflow:
 
 ---
 
-## 🧩 Core Components
-
-GDB-UI is composed of several core components designed to facilitate efficient debugging.
-
-### Visual Builder
-
-- **User Interface:** A responsive web-based UI built with React.
-
-- **Interactive Elements:** Tools for setting breakpoints, stepping through code, and visualizing program state.
-
-- **Customization:** Easily configurable themes and layouts for personal 
-preference.
-
-### Code Translator
-
-- **Command Parser:** Translates user actions into GDB commands.
-
-- **Response Handler:** Interprets responses from GDB and updates the UI accordingly.
-
-- **Error Management:** Provides clear and actionable error messages to assist in troubleshooting.
-
-
----
-
 ## ⚙️ Development Workflow
 
 To maintain a high standard of code quality and collaboration, please adhere to the following development workflow guidelines.
