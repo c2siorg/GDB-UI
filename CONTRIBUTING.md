@@ -16,14 +16,13 @@ _First of all, thank you for considering contributing to GDB-UI! We welcome cont
   - [Commit Messages](#commit-messages)
   - [Testing](#testing)
 - [Documentation](#documentation)
-- [License](#license)
 - [Questions](#questions)
 
 ---
 
 ## Code of Conduct
 
-Please note that this project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [maintainer@example.com](mailto:maintainer@example.com).
+Please note that this project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
 ---
 
@@ -106,6 +105,6 @@ Use clear and concise commit messages. A good commit message should include:
 --- 
 
 # Questions
-If you have any questions, feel free to reach out by opening an issue or contacting one of the maintainers at maintainer@example.com.
+If you have any questions, feel free to reach out by opening an issue or contacting one of the maintainers at # gdb-ui (Slack Channel).
 
 **Thank you for contributing to GDB-UI!**
