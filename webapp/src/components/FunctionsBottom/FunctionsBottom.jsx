@@ -1,5 +1,5 @@
-import React from "react";
-import "./FunctionsBottom.css";
+import React from 'react'
+import './FunctionsBottom.css'
 
 const FunctionsBottom = () => {
   return (
@@ -13,7 +13,7 @@ const FunctionsBottom = () => {
         />
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default FunctionsBottom;
+export default FunctionsBottom

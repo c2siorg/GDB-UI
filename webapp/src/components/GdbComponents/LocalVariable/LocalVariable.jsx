@@ -1,5 +1,5 @@
-import React from "react";
-import "./LocalVariable.css";
+import React from 'react'
+import './LocalVariable.css'
 
 const LocalVariable = () => {
   return (
@@ -15,7 +15,7 @@ const LocalVariable = () => {
         <a>result -7.23123124124342345</a>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default LocalVariable;
+export default LocalVariable
