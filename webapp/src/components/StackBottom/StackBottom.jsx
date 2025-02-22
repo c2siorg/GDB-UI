@@ -1,5 +1,5 @@
-import React from "react";
-import "./StackBottom.css";
+import React from 'react'
+import './StackBottom.css'
 
 const StackBottom = () => {
   return (
@@ -16,7 +16,7 @@ const StackBottom = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default StackBottom;
+export default StackBottom

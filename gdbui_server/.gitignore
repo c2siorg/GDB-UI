@@ -22,3 +22,6 @@ ENV/
 lib/
 lib64/
 include/
+
+# cache files 
+.ruff_cache
