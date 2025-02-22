@@ -21,6 +21,7 @@ img {
 }
 .login {
   display: flex;
+  align-items: center;
   gap: 40px;
 }
 
@@ -30,4 +31,12 @@ img {
   border-radius: 50%;
   width: 20px;
   height: 20px;
+}
+
+.github-button {
+  margin-top: 5px;
+  background: none;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
 }
