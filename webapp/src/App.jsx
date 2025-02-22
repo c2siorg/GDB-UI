@@ -12,16 +12,16 @@ import { DataState } from "./context/DataContext";
 import Home from "./pages/Home/Home";
 
 const App = () => {
-  const { setDark, dark, isDarkMode, setDarkMode } = DataState();
+  const { setDark, dark, isDarkMode, setDarkMode } = DataState()
 
   const toggleDarkMode = () => {
-    setDarkMode((isDarkMode) => (isDarkMode === "dark" ? "light" : "dark"));
-    setDark(!dark);
-  };
+    setDarkMode((isDarkMode) => (isDarkMode === 'dark' ? 'light' : 'dark'))
+    setDark(!dark)
+  }
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", isDarkMode);
-  }, [isDarkMode]);
+    document.documentElement.setAttribute('data-theme', isDarkMode)
+  }, [isDarkMode])
   return (
     <div>
       <Header
@@ -42,7 +42,7 @@ const App = () => {
       </Routes>
       <Footer />
     </div>
-  );
-};
+  )
+}
 
-export default App;
+export default App
