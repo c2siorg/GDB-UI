@@ -9,6 +9,7 @@ import BreakPoints from "./components/GdbComponents/BreakPoints/BreakPoints";
 import Footer from "./components/Footer/Footer";
 import Header from "./components/Header/Header";
 import { DataState } from "./context/DataContext";
+import Home from "./pages/Home/Home";
 
 const App = () => {
   const { setDark, dark, isDarkMode, setDarkMode } = DataState();
@@ -28,8 +29,8 @@ const App = () => {
         toggleDarkMode={toggleDarkMode}
         dark={dark}
       />
-
       <Routes>
+        <Route path="/" element={<Home />} />
         <Route path="debug" element={<Debug />}>
           <Route path="threads" element={<Threads />} />
           <Route path="localVariable" element={<LocalVariable />} />
