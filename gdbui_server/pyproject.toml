@@ -1,0 +1,24 @@
+[tool.ruff]
+line-length = 88
+target-version = "py310"  # Change to match your Python version
+exclude = ["venv", "migrations", "__pycache__"]
+
+# Enable more linting rules to match Pylint & Flake8
+[tool.ruff.lint]
+select = [
+    "E",  # Pycodestyle errors
+    "F",  # Pyflakes errors (undefined variables, imports)
+    "W",  # Warnings
+    "I",  # Import sorting
+    "N",  # Naming conventions (like Pylint)
+    "D",  # Docstring checks (like Pylint)
+    "B",  # Bugbear (helps catch potential bugs)
+    "C",  # Complexity checks (like Pylint)
+    "UP", # Upgrade syntax (suggests modern Python)
+    "RUF" # Ruff-specific rules
+]
+ignore = ["E501"]  # Ignore long line warnings (handled by formatter)
+
+[tool.ruff.format]
+quote-style = "double"  # Use double quotes for consistency
+indent-style = "space"  # Use spaces instead of tabs

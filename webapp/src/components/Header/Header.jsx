@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
 import { FaGithub } from "react-icons/fa";
 
+
 const Header = ({ isDarkMode, toggleDarkMode, dark }) => {
   return (
     <div className="header">
@@ -20,7 +21,7 @@ const Header = ({ isDarkMode, toggleDarkMode, dark }) => {
         </div>
           <div className="darkmode">
             <DarkModeSwitch
-              style={{ marginBottom: "2rem" }}
+              style={{ marginBottom: '2rem' }}
               checked={dark}
               onChange={toggleDarkMode}
               size={20}
@@ -30,7 +31,7 @@ const Header = ({ isDarkMode, toggleDarkMode, dark }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

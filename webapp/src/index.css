@@ -15,14 +15,14 @@
   --footer-light-color: rgba(0, 0, 0, 0.87);
 }
 
-[data-theme="light"] {
+[data-theme='light'] {
   --color: rgba(0, 0, 0, 0.87);
   --background-color: #ffffff;
   --footer-background-color: var(--footer-light-background);
   --footer-color: var(--footer-light-color);
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   --color: rgba(255, 255, 255, 0.87);
   --background-color: #242424;
   --footer-background-color: rgb(2, 12, 22);
