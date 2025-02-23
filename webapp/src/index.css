@@ -1,4 +1,6 @@
-:root {
+@import "tailwindcss";
+
+/* :root {
   --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   --line-height: 1.5;
   --font-weight: 400;
@@ -40,4 +42,4 @@ body {
   -webkit-font-smoothing: var(--webkit-font-smoothing);
   -moz-osx-font-smoothing: var(--moz-osx-font-smoothing);
   padding: var(--padding);
-}
+} */
