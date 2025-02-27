@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - feature/gdbui-2025
 
 jobs:
   test-npm:
