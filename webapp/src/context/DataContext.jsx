@@ -9,9 +9,9 @@ import React, {
 export const DataContext = createContext()
 
 export const DataProvider = ({ children }) => {
-
   const [isDarkMode, setDarkMode] = useState('dark')
   const [dark, setDark] = useState(false)
+  const [textCode, setTextCode] = useState('')
   const [refresh, setRefresh] = useState(false)
   const [stack, setStack] = useState([])
   const [functions, setFunctions] = useState([])
@@ -61,7 +61,7 @@ export const DataProvider = ({ children }) => {
         commandPress,
         setTerminalOutput,
         textCode,
-        setTextCode
+        setTextCode,
       }}
     >
       {children}

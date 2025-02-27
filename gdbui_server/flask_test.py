@@ -30,6 +30,8 @@ class TestGDBRoutes(TestCase):
 
     def tearDown(self):
         self.temp_dir.cleanup()
+        os.system("taskkill /f /im gdb.exe 2>nul")
+        os.system("pkill gdb")
 
     def test_compile_code(self):
         with mock.patch("os.makedirs") as mock_makedirs:
