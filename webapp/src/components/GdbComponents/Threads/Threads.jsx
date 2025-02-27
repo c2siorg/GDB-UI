@@ -1,44 +1,44 @@
-import React from "react";
-import "./Threads.css";
+import React from 'react'
+import './Threads.css'
 
 const data = [
   {
-    func: "main",
-    file: "temp.cpp:18",
-    addr: "0x10FFF3423WS3234234C",
-    args: "args",
+    func: 'main',
+    file: 'temp.cpp:18',
+    addr: '0x10FFF3423WS3234234C',
+    args: 'args',
   },
   {
-    func: "main",
-    file: "temp.cpp:18",
-    addr: "0x10FFF3423WS3234234C",
-    args: "args",
+    func: 'main',
+    file: 'temp.cpp:18',
+    addr: '0x10FFF3423WS3234234C',
+    args: 'args',
   },
   {
-    func: "main",
-    file: "temp.cpp:18",
-    addr: "0x10FFF3423WS3234234C",
-    args: "args",
+    func: 'main',
+    file: 'temp.cpp:18',
+    addr: '0x10FFF3423WS3234234C',
+    args: 'args',
   },
   {
-    func: "main",
-    file: "temp.cpp:18",
-    addr: "0x10FFF3423WS3234234C",
-    args: "args",
+    func: 'main',
+    file: 'temp.cpp:18',
+    addr: '0x10FFF3423WS3234234C',
+    args: 'args',
   },
   {
-    func: "main",
-    file: "temp.cpp:18",
-    addr: "0x10FFF3423WS3234234C",
-    args: "args",
+    func: 'main',
+    file: 'temp.cpp:18',
+    addr: '0x10FFF3423WS3234234C',
+    args: 'args',
   },
   {
-    func: "main",
-    file: "temp.cpp:18",
-    addr: "0x10FFF3423WS3234234C",
-    args: "args",
+    func: 'main',
+    file: 'temp.cpp:18',
+    addr: '0x10FFF3423WS3234234C',
+    args: 'args',
   },
-];
+]
 
 const Threads = () => {
   return (
@@ -61,13 +61,13 @@ const Threads = () => {
                     <div className="threads-component-part3">{obj.addr}</div>
                     <div className="threads-component-part4">{obj.args}</div>
                   </div>
-                );
+                )
               })
-            : ""}
+            : ''}
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Threads;
+export default Threads
