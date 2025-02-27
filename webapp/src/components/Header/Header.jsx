@@ -12,13 +12,17 @@ const Header = ({ isDarkMode, toggleDarkMode, dark }) => {
       <div className="head">
         <div className="img">
           <img src={c2si} alt="C2si" />
-        </div>        
-        <div className="login">
-        <div className="github">
-          <button className="github-button" onClick={() => window.open("https://github.com/c2siorg/GDB-UI", "_blank")}>
-            <FaGithub size={37}  className="github-icon"/>
-          </button>
         </div>
+        <div className="login">
+          <div className="github">
+            <button
+              className="github-button"
+              onClick={() =>
+                window.open("https://github.com/c2siorg/GDB-UI", "_blank")
+              }>
+              <FaGithub size={37} className="github-icon" />
+            </button>
+          </div>
           <div className="darkmode">
             <DarkModeSwitch
               style={{ marginBottom: '2rem' }}
