@@ -32,19 +32,26 @@ body {
   align-items: center;
   gap: 25px;
   width: 100%;
+  margin-left: -60px;
   /* background: var(--Gray-1, #333); */
 }
 .upper-part {
   display: flex;
-  padding: 20px;
+  padding: 10px 0px 0px 0px; /* Remove the extra bottom padding */
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 20px;
   background-color: var(--component-background-color);
+  border: 1px solid var(--Gray-2, #4f4f4f);
+  margin-top: 30px;
 }
 
-[data-theme='light'] .upper-part {
+
+
+[data-theme="light"] .upper-part {
+
+
   background-color: var(--component-light-background);
   color: var(--component-light-color);
 }
@@ -52,13 +59,15 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 15px;
+  gap: 0px;
+  position: relative; /* Ensure positioning context */
+  transform: translate(-80px, 100px); /* Move right by 110px and down by 70px */
 }
 .right-part {
   display: flex;
 
   flex-direction: column;
-  gap: 10px;
+  gap: 0px;
 }
 .left-part {
   display: flex;
