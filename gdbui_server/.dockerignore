@@ -1,0 +1,25 @@
+# Ignore Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore environment variables
+.env
+
+# Ignore virtual environments
+venv/
+env/
+ENV/
+
+# Ignore dependency directories (pip installs dependencies inside the container)
+lib/
+lib64/
+include/
+
+# Ignore IDE/editor configurations
+.idea/
+.vscode/
+
+# Ignore cache and logs
+.ruff_cache
+*.log
