@@ -44,8 +44,9 @@ const Functions = () => {
       offset
       <div className="functions">
         {functions}
-        {data.map((obj) => {
-          return <a>{obj}</a>
+        {data.map((obj, index) => {
+          return <a key={index}>{obj}</a>;
+
         })}
         {/* <a>sub.KERNEL32.dll_DeleteCritical_231</a> */}
       </div>
