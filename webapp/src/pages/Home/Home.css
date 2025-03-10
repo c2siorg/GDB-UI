@@ -1,0 +1,38 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 62vh;
+  padding: 20px;
+  background-color: var(--main-background-color);
+  color: var(--main-color);
+  text-align: center;
+}
+
+.home-title {
+  color: #d77a30;
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.home-overview {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  max-width: 875px;
+}
+
+.start-debugging-button {
+  padding: 10px 20px;
+  font-size: 1.2rem;
+  color: #fff;
+  background-color: var(--primary-orange, #e88f40);
+  border: none;
+  border-radius: 5px;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.start-debugging-button:hover {
+  background-color: #d77a30;
+}
