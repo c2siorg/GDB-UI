@@ -1,4 +1,4 @@
-# GDB-UI
+# GDB-UIS
 
 **GDB-UI** is a user-friendly interface built for the GNU Debugger (GDB), providing a modern web-based UI for debugging your applications. It allows developers to monitor program execution, inspect variables, set breakpoints, and more, all through an intuitive web application.
 
