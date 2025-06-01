@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gdbuiwebapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gdbuiwebapp
+  template:
+    metadata:
+      labels:
+        app: gdbuiwebapp
+    spec:
+      containers:
+        - name: gdbuiwebapp
+          image: shubh197/gdbuiwebapp:latest
+          ports:
+            - containerPort: 5173

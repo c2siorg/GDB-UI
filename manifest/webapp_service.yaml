@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gdbuiwebapp-service
+spec:
+  selector:
+    app: gdbuiwebapp
+  ports:
+    - port: 80
+      targetPort: 5173
+  type: ClusterIP
