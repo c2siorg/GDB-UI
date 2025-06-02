@@ -25,6 +25,24 @@ jobs:
         with:
           python-version: "3.10"
 
+      # Cache pip dependencies
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Cache APT packages to avoid reinstalling gdb
+      - name: Cache APT Packages
+        uses: actions/cache@v3
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
       - name: Install gdb
         run: |
           sudo apt-get update
