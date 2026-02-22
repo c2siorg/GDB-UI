@@ -1,12 +1,14 @@
+/* Context sub-component */
 .context {
   display: flex;
-  width: 644px;
-  height: 177px;
-  padding: 15px 20px;
+  width: 100%;
+  padding: 10px;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
-
-  border: 1px solid var(--Gray-2, #4f4f4f);
-  /* background: #1e1e1e; */
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  max-height: 160px;
+  overflow-y: auto;
 }

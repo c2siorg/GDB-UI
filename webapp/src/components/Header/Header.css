@@ -1,33 +1,78 @@
+/* Header */
 .header {
   display: flex;
   justify-content: center;
-  margin: 0 auto;
-
-  padding-top: 10px;
-  padding-bottom: 10px;
+  padding: 12px 16px;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition), border-color var(--transition);
 }
 
 .head {
   display: flex;
-  width: 90vw;
+  width: 100%;
+  max-width: 1440px;
   justify-content: space-between;
   align-items: center;
 }
 
-img {
-  width: 111px;
-  height: 62px;
-  flex-shrink: 0;
-}
-.login {
-  display: flex;
-  gap: 40px;
+.head .img img {
+  height: 48px;
+  width: auto;
+  opacity: 0.9;
+  transition: opacity var(--transition), filter var(--transition);
 }
 
-.darkmode {
-  padding: 10px;
-  background-color: #333333;
+[data-mode="light"] .head .img img {
+  filter: invert(1);
+}
+
+.head .img img:hover {
+  opacity: 1;
+}
+
+.login {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.login a {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all var(--transition);
+}
+
+.login a:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}
+
+/* Unified mode toggle */
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.mode-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--icon-hover-bg);
+  transform: rotate(15deg);
 }

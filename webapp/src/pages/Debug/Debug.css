@@ -1,68 +1,61 @@
-:root {
-  /* --main-background-color: #000000; Black background for the main screen */
-  --main-color: rgba(255, 255, 255, 0.87); /* White text color */
-  --component-background-color: #333333; /* Grey background for specific component */
-  --component-light-background: #ffffff; /* White background for specific component in light mode */
-}
-
-[data-theme="light"] {
-  --main-background-color: #ffffff; /* White background for main screen in light mode */
-  --main-color: rgba(0, 0, 0, 0.87); /* Black text color for light mode */
-}
-
-[data-theme="dark"] {
-  --main-background-color: #242424;
-  --main-color: rgba(255, 255, 255, 0.87); /* White text color for dark mode */
-}
-
-body {
-  color: var(--main-color);
-  background-color: var(--main-background-color);
-}
+/* ═══════════════════════════════════════════════
+   Debug Page — 3-Column Layout
+   ═══════════════════════════════════════════════ */
 
 .container {
-  display: flex;
-  justify-content: space-between;
-  /* align-items: flex-start; */
-  /* gap: 10px; */
+  display: grid;
+  grid-template-columns: 220px 1fr 220px;
+  gap: 12px;
+  padding: 0 16px 16px;
+  min-height: calc(100vh - 140px);
 }
+
+.left-part {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.right-part {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .middle-component {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 25px;
-  width: 100%;
-  /* background: var(--Gray-1, #333); */
+  gap: 12px;
+  min-width: 0;
 }
+
 .upper-part {
   display: flex;
-  padding: 20px;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  background-color: var(--component-background-color);
+  gap: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  flex: 1;
+  transition: background var(--transition), border-color var(--transition);
 }
 
-[data-theme="light"] .upper-part {
-  background-color: var(--component-light-background);
-  color: var(--component-light-color);
-}
 .lower-part {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 15px;
+  gap: 12px;
 }
-.right-part {
-  display: flex;
 
-  flex-direction: column;
-  gap: 10px;
-}
-.left-part {
-  display: flex;
+/* Responsive: collapse columns on small screens */
+@media (max-width: 900px) {
+  .container {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 
-  flex-direction: column;
-  gap: 10px;
+  .left-part,
+  .right-part {
+    flex-direction: row;
+    overflow-x: auto;
+  }
 }

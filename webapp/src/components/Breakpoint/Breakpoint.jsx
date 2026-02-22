@@ -4,8 +4,10 @@ import "./Breakpoint.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { useTheme } from "../../context/ThemeContext";
 
 const Breakpoint = () => {
+  const { isDark } = useTheme();
   const [breakLine, setBreakLine] = useState("");
   const [breakFunction, setBreakFunction] = useState("");
 
@@ -70,7 +72,7 @@ const Breakpoint = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light"
+        theme={isDark ? "dark" : "light"}
       />
     </div>
   );

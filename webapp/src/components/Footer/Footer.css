@@ -1,8 +1,13 @@
+/* Footer */
 .footer-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 30px;
-  background-color: var(--footer-background-color);
-  color: var(--footer-color); /* If you want to set text color */
+  padding: 12px 16px;
+  background: var(--footer-bg);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: all var(--transition);
 }

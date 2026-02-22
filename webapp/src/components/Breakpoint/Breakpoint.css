@@ -1,40 +1,53 @@
+/* Breakpoint Panel */
 .breakpoint-container {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
+  flex: 1;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all var(--transition);
 }
+
 .add-breakpoint {
-  display: flex;
-  padding: 6px 12px;
-  align-items: flex-start;
-  gap: 10px;
-  border: 1px solid var(--Gray-2, #4f4f4f);
+  padding: 8px 12px;
+  font-family: var(--font-body);
+  font-size: var(--panel-heading-size);
+  font-weight: var(--panel-heading-weight);
+  letter-spacing: var(--panel-heading-spacing);
+  text-transform: var(--panel-heading-transform);
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
 }
 
 .lower-breakpoint {
+  padding: 12px;
   display: flex;
-  height: 177px;
-  padding: 7px 10px;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 9px;
-  border: 1px solid var(--Gray-2, #4f4f4f);
-  /* background: #1e1e1e; */
+  gap: 8px;
 }
 
 .line-breakpoint {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 8px;
 }
 
-.save-button {
-  display: flex;
-  padding: 4px 8px;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  border-radius: 2px;
-  background: var(--primary-orange, #e88f40);
+.line-breakpoint a {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 60px;
+}
+
+.line-breakpoint input {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.breakpoint-container .save-button {
+  margin-top: 4px;
+  align-self: flex-start;
 }

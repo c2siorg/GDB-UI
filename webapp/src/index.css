@@ -1,43 +1,137 @@
-:root {
-  --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  --line-height: 1.5;
-  --font-weight: 400;
-  --color-scheme: light dark;
-  --color: rgba(255, 255, 255, 0.87);
-  --background-color: #242424;
-  --font-synthesis: none;
-  --text-rendering: optimizeLegibility;
-  --webkit-font-smoothing: antialiased;
-  --moz-osx-font-smoothing: grayscale;
-  --padding: 0 20px;
-  --footer-background-color: rgb(2, 12, 22);
-  --footer-light-background: #ffffff;
-  --footer-light-color: rgba(0, 0, 0, 0.87);
+/* ═══════════════════════════════════════════════════════════
+   GDB-UI — Base Structural Stylesheet
+   All colors come from themes.css via var(--*) tokens.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-[data-theme="light"] {
-  --color: rgba(0, 0, 0, 0.87);
-  --background-color: #ffffff;
-  --footer-background-color: var(--footer-light-background);
-  --footer-color: var(--footer-light-color);
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-[data-theme="dark"] {
-  --color: rgba(255, 255, 255, 0.87);
-  --background-color: #242424;
-  --footer-background-color: rgb(2, 12, 22);
-  --footer-color: rgba(255, 255, 255, 0.87);
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+/* ── Root & Body ── */
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  font-family: var(--font-family);
-  line-height: var(--line-height);
-  font-weight: var(--font-weight);
-  color: var(--color);
-  background-color: var(--background-color);
-  font-synthesis: var(--font-synthesis);
-  text-rendering: var(--text-rendering);
-  -webkit-font-smoothing: var(--webkit-font-smoothing);
-  -moz-osx-font-smoothing: var(--moz-osx-font-smoothing);
-  padding: var(--padding);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Typography ── */
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+/* ── Inputs / Buttons ── */
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="search"] {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-subtle);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+/* ── Selection ── */
+::selection {
+  background: var(--accent-subtle);
+  color: var(--text-primary);
+}
+
+/* ── Toast overrides (react-toastify) ── */
+[data-mode="dark"] .Toastify__toast {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border);
+}
+
+[data-mode="dark"] .Toastify__close-button {
+  color: var(--text-secondary) !important;
+}
+
+[data-mode="dark"] .Toastify__progress-bar {
+  background: var(--accent) !important;
+}
+
+[data-mode="light"] .Toastify__toast {
+  background: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border);
+}
+
+[data-mode="light"] .Toastify__close-button {
+  color: var(--text-secondary) !important;
+}
+
+[data-mode="light"] .Toastify__progress-bar {
+  background: var(--accent) !important;
 }

@@ -1,8 +1,42 @@
+/* Terminal */
 .terminal {
-  width: 55vw;
-  height: 234px;
-  flex-shrink: 0;
-  padding-left: 30px;
-  padding-right: 30px;
-  padding-bottom: 50px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  height: 200px;
+  transition: border-color var(--transition);
+}
+
+.terminal>div {
+  height: 100% !important;
+}
+
+/* Hide the macOS-style controls bar */
+.terminal [class*="controls"] {
+  display: none !important;
+}
+
+/* Make cursor a thin line like Monaco */
+.terminal [class*="caretAfter"],
+.terminal [class*="caret"] {
+  width: 2px !important;
+  border-radius: 0 !important;
+  animation: terminalBlink 1s step-end infinite !important;
+}
+
+@keyframes terminalBlink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Ensure terminal container bg matches theme */
+.terminal [class*="terminal__"] {
+  background-color: var(--terminal-bg) !important;
 }

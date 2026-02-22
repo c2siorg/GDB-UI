@@ -21,14 +21,12 @@ const Functions = () => {
 
   const fetchFunctionsData = async () => {
     try {
-      console.log("click from functions");
       const data = await axios.post("http://127.0.0.1:10000/get_locals", {
         name: "program",
       });
-      console.log(data.data.result);
       setFunctions(data.data.result);
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching functions:", error);
     }
   };
 
@@ -40,14 +38,12 @@ const Functions = () => {
 
   return (
     <div className="functions-parent">
-      <a className="functions-heading"> Functions</a>
-      offset
+      <span className="functions-heading">Functions</span>
       <div className="functions">
         {functions}
-        {data.map((obj) => {
-          return <a>{obj}</a>;
-        })}
-        {/* <a>sub.KERNEL32.dll_DeleteCritical_231</a> */}
+        {data.map((obj, index) => (
+          <a key={index}>{obj}</a>
+        ))}
       </div>
     </div>
   );

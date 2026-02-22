@@ -1,25 +1,48 @@
+/* StackBottom — Registers */
 .stackbottom-container {
-  display: flex;
-  width: 190px;
-  height: 159px;
-  padding: 15px 20px;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  border: 1px solid var(--Gray-2, #4f4f4f);
-  /* background: #1e1e1e; */
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all var(--transition);
 }
-.stackbottom-maincomponent {
-  overflow-x: scroll;
-  width: 190px;
-  height: 139px;
-}
+
 .stackbottom-heading {
+  padding: 8px 12px;
+  font-family: var(--font-body);
+  font-size: var(--panel-heading-size);
+  font-weight: var(--panel-heading-weight);
+  letter-spacing: var(--panel-heading-spacing);
+  text-transform: var(--panel-heading-transform);
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.stackbottom-maincomponent {
+  padding: 4px 0;
+}
+
+.threads-component {
   display: flex;
-  width: 169px;
-  padding: 6px 12px;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  background: var(--primary-orange, #e88f40);
+  gap: 0;
+}
+
+.threads-component>div {
+  flex: 1;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  border-right: 1px solid var(--border);
+  transition: color var(--transition);
+}
+
+.threads-component>div:last-child {
+  border-right: none;
+}
+
+.threads-component>div:hover {
+  color: var(--accent);
+  background: var(--accent-subtle);
 }

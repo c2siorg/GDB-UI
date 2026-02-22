@@ -1,21 +1,26 @@
 // main.jsx
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { DataProvider } from "./context/DataContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { TerminalContextProvider } from "react-terminal";
 import App from "./App";
+import "./themes.css";
 import "./index.css";
 
-ReactDOM.render(
+const root = createRoot(document.getElementById("root"));
+
+root.render(
   <BrowserRouter>
-    <DataProvider>
-      <TerminalContextProvider>
-        <React.StrictMode>
-          <App />
-        </React.StrictMode>
-      </TerminalContextProvider>
-    </DataProvider>
-  </BrowserRouter>,
-  document.getElementById("root")
+    <ThemeProvider>
+      <DataProvider>
+        <TerminalContextProvider>
+          <React.StrictMode>
+            <App />
+          </React.StrictMode>
+        </TerminalContextProvider>
+      </DataProvider>
+    </ThemeProvider>
+  </BrowserRouter>
 );

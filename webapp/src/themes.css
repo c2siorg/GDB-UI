@@ -1,0 +1,99 @@
+/* ═══════════════════════════════════════════════════════════
+   GDB-UI — Dark / Light Mode
+   Dark  = Obsidian (hacker-dark, sharp, monospace, cyan)
+   Light = Bone    (editorial, warm ivory, serif accents)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Dark Mode (Obsidian) ───────────────────────────────── */
+[data-mode="dark"] {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #111118;
+    --bg-panel: #16161f;
+    --bg-elevated: #1c1c28;
+    --text-primary: #e4e4ef;
+    --text-secondary: #9898b0;
+    --text-muted: #5a5a72;
+    --accent: #7ac3c4;
+    --accent-hover: #5be1e3;
+    --accent-subtle: rgba(0, 229, 255, 0.08);
+    --border: #2a2a3a;
+    --border-hover: #3a3a52;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-body: 'DM Sans', sans-serif;
+    --font-display: 'JetBrains Mono', monospace;
+    --radius: 2px;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+    --transition: 0.15s ease;
+    --header-bg: #0d0d14;
+    --footer-bg: #08080c;
+    --scrollbar-thumb: #2a2a3a;
+    --scrollbar-track: #0a0a0f;
+    --input-bg: #111118;
+    --input-border: #2a2a3a;
+    --btn-bg: #7ac3c4;
+    --btn-text: #0a0a0f;
+    --btn-hover: #5be1e3;
+    --tab-active-bg: rgba(0, 229, 255, 0.1);
+    --tab-active-border: #7ac3c4;
+    --icon-hover-bg: rgba(0, 229, 255, 0.12);
+    --panel-heading-size: 10px;
+    --panel-heading-weight: 700;
+    --panel-heading-spacing: 0.12em;
+    --panel-heading-transform: uppercase;
+
+    /* Terminal */
+    --terminal-bg: #0a0a0f;
+    --terminal-toolbar: #111118;
+    --terminal-text: #e4e4ef;
+    --terminal-prompt: #7ac3c4;
+
+    /* Editor */
+    --editor-theme: vs-dark;
+}
+
+/* ─── Light Mode (Bone) ──────────────────────────────────── */
+[data-mode="light"] {
+    --bg-primary: #f5f0e8;
+    --bg-secondary: #ece6db;
+    --bg-panel: #ffffff;
+    --bg-elevated: #ffffff;
+    --text-primary: #2d2d2d;
+    --text-secondary: #5c5c5c;
+    --text-muted: #9a9a9a;
+    --accent: #c45d3e;
+    --accent-hover: #d4714f;
+    --accent-subtle: rgba(196, 93, 62, 0.08);
+    --border: #ddd5c8;
+    --border-hover: #c5baa8;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-body: 'DM Sans', sans-serif;
+    --font-display: 'JetBrains Mono', monospace;
+    --radius: 6px;
+    --shadow: 0 1px 4px rgba(120, 100, 70, 0.08);
+    --transition: 0.2s ease;
+    --header-bg: #f5f0e8;
+    --footer-bg: #ece6db;
+    --scrollbar-thumb: #c5baa8;
+    --scrollbar-track: #f5f0e8;
+    --input-bg: #ffffff;
+    --input-border: #ddd5c8;
+    --btn-bg: #c45d3e;
+    --btn-text: #ffffff;
+    --btn-hover: #d4714f;
+    --tab-active-bg: rgba(196, 93, 62, 0.07);
+    --tab-active-border: #c45d3e;
+    --icon-hover-bg: rgba(196, 93, 62, 0.1);
+    --panel-heading-size: 10px;
+    --panel-heading-weight: 700;
+    --panel-heading-spacing: 0.12em;
+    --panel-heading-transform: uppercase;
+
+    /* Terminal */
+    --terminal-bg: #ffffff;
+    --terminal-toolbar: #ece6db;
+    --terminal-text: #2d2d2d;
+    --terminal-prompt: #c45d3e;
+
+    /* Editor */
+    --editor-theme: vs;
+}
