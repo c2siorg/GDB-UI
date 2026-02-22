@@ -1,13 +1,15 @@
 // main.jsx
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { DataProvider } from "./context/DataContext";
 import { TerminalContextProvider } from "react-terminal";
 import App from "./App";
 import "./index.css";
 
-ReactDOM.render(
+const root = createRoot(document.getElementById("root"));
+
+root.render(
   <BrowserRouter>
     <DataProvider>
       <TerminalContextProvider>
@@ -16,6 +18,5 @@ ReactDOM.render(
         </React.StrictMode>
       </TerminalContextProvider>
     </DataProvider>
-  </BrowserRouter>,
-  document.getElementById("root")
+  </BrowserRouter>
 );
