@@ -10,8 +10,8 @@ const MainScreen = () => {
       MainScreen
       <div className="mainScreen">
         <Editor
-          height="90vh"
-          className="mainScreen"
+          height="100%"
+          width="100%"
           defaultLanguage="cpp"
           defaultValue="// some comment"
           theme={isDarkMode === "dark" ? "vs-dark" : "vs"}
