@@ -11,8 +11,10 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 gdb_controller = None
 program_name = None
 
+os.makedirs('output', exist_ok=True)
+
 def execute_gdb_command(command):
-    response2 = gdb_controller.write(command)
+    response2 = gdb_controller.write(command, timeout_sec=5)
     if response2 is None:
         raise RuntimeError("No response from GDB controller")
     strm = ""
@@ -20,28 +22,33 @@ def execute_gdb_command(command):
         strm = strm + "\n " + str(rem.get('payload'))
     return strm.strip()
 
-def ensure_exe_extension(name):
-    return name if name.endswith('.exe') else name + '.exe'
-
 def start_gdb_session(program):
     global gdb_controller, program_name
     program_name = program
+    
+    if gdb_controller:
+        try:
+            gdb_controller.exit()
+        except:
+            pass
+
     try:
         gdb_controller = GdbController()
     except Exception as e:
         raise RuntimeError(f"Failed to initialize GDB controller: {e}")
 
     try:
-        response = gdb_controller.write(f"-file-exec-and-symbols {os.path.join('output/', ensure_exe_extension(program_name))}")
+        binary_path = os.path.join('output', program_name)
+        response = gdb_controller.write(f"-file-exec-and-symbols {binary_path}", timeout_sec=5)
         if response is None:
-            raise RuntimeError("No response from GDB controller")
+            raise RuntimeError("No response from GDB controller during file load")
     except Exception as e:
         raise RuntimeError(f"Failed to set program file: {e}")
     
     try:
-        response = gdb_controller.write("run")
+        response = gdb_controller.write("run", timeout_sec=5)
         if response is None:
-            raise RuntimeError("No response from GDB controller")
+            raise RuntimeError("No response from GDB controller during run")
     except Exception as e:
         raise RuntimeError(f"Failed to start program: {e}")
 
@@ -80,7 +87,7 @@ def compile_code():
     with open(f'{name}.cpp', 'w') as file:
         file.write(code)
 
-    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
+    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}'], capture_output=True, text=True)
 
     if result.returncode == 0:
         program_name = None
@@ -99,7 +106,7 @@ def upload_file():
     if file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file'}), 400
 
-    file_path = os.path.join('output/', ensure_exe_extension(name))
+    file_path = os.path.join('output', name)
     file.save(file_path)
 
     return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})
