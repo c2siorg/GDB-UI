@@ -9,8 +9,8 @@ COPY requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install gdb
-RUN apt-get update && apt-get install -y gdb
+# Install gdb and g++
+RUN apt-get update && apt-get install -y gdb g++
 
 # Copy the rest of the application code
 COPY . .

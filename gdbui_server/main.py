@@ -77,14 +77,23 @@ def compile_code():
     code = data.get('code')
     name = data.get('name')
 
-    with open(f'{name}.cpp', 'w') as file:
+    # Security: use sanitize_name if it was added in the previous PR, otherwise standard name.
+    # Since this is a new branch off main (before PR #98 merged), we use raw name or sanitize it manually.
+    if not isinstance(name, str) or '..' in name or '/' in name or '\\' in name:
+        name = "program"
+    
+    os.makedirs('output', exist_ok=True)
+    source_path = os.path.join('output', f'{name}.cpp')
+    binary_path = os.path.join('output', f'{name}.exe')
+
+    with open(source_path, 'w') as file:
         file.write(code)
 
-    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
+    result = subprocess.run(['g++', source_path, '-o', binary_path], capture_output=True, text=True)
 
     if result.returncode == 0:
         program_name = None
-        return jsonify({'success': True, 'output': 'Compilation successful.'})
+        return jsonify({'success': True, 'output': 'Compilation successful.', 'file_path': binary_path})
     else:
         return jsonify({'success': False, 'output': result.stderr})
 
