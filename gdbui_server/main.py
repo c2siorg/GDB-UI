@@ -12,11 +12,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 gdb_controller = None
 program_name = None
 
-# ---------------------------------------------------------------------------
-# Security: Allowlist of GDB commands the UI is permitted to send.
-# Any command NOT starting with one of these prefixes is rejected,
-# preventing Remote Code Execution via GDB's `shell` / `pi` builtins.
-# ---------------------------------------------------------------------------
+# Allowlist of permitted GDB commands
 LIMITED_GDB_COMMANDS = (
     "break ", "break\n",
     "delete ", "delete\n",
@@ -32,7 +28,6 @@ LIMITED_GDB_COMMANDS = (
 )
 
 def is_safe_gdb_command(command: str) -> bool:
-    """Return True only if command starts with a known-safe GDB prefix."""
     if not isinstance(command, str):
         return False
     cmd = command.strip()
@@ -40,10 +35,8 @@ def is_safe_gdb_command(command: str) -> bool:
                for allowed in LIMITED_GDB_COMMANDS)
 
 def sanitize_name(name: str) -> str:
-    """Strip path separators from a user-supplied name to prevent path traversal."""
     if not isinstance(name, str):
         raise ValueError("Name must be a string")
-    # Allow only alphanumeric, dash, underscore, dot
     if not re.match(r'^[\w\-\.]+$', name):
         raise ValueError(f"Invalid name: {name!r}")
     return name
@@ -89,7 +82,6 @@ def gdb_command():
     command = data.get('command')
     file = data.get('name')
 
-    # Security: reject commands not on the safe allowlist
     if not is_safe_gdb_command(command):
         return jsonify({'success': False, 'error': 'Command not permitted.'}), 403
 
