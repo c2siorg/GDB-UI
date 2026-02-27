@@ -17,13 +17,12 @@ const DebugHeader = () => {
     refresh,
     setRefresh,
     setTerminalOutput,
-    setCommandPress,
-    commandPress,
+    setCommandCount,
   } = DataState();
 
   const handleRun = (command) => {
     console.log("clicked");
-    setCommandPress(!commandPress);
+    setCommandCount(prev => prev + 1);
     setTerminalOutput(command);
   };
 
