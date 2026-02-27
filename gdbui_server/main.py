@@ -11,6 +11,20 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 gdb_controller = None
 program_name = None
 
+# and this will be used later in the gdb command endpoint for validation
+ALLOWED_GDB_COMMANDS = [
+    "run",
+    "next",
+    "step",
+    "break",
+    "continue",
+    "bt",
+    "info",
+    "watch",
+    "delete",
+    "finish"
+]
+
 def execute_gdb_command(command):
     response2 = gdb_controller.write(command)
     if response2 is None:
@@ -53,6 +67,14 @@ def gdb_command():
     file = data.get('name')
     if program_name != file:
         start_gdb_session(f'{file}')
+
+    #here we will start using the white list for the validation
+    if not any(command.lower().startswith(c.lower()) for c in ALLOWED_GDB_COMMANDS):
+        return jsonify({
+            'success': False,
+            'error': f"Command '{command}' is not allowed.",
+            'code': None
+        }), 400
 
     try:
         result = execute_gdb_command(command)
