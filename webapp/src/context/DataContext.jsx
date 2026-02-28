@@ -18,6 +18,7 @@ export const DataProvider = ({ children }) => {
   const [memoryMap, setMemoryMap] = useState("");
   const [terminalOutput, setTerminalOutput] = useState("");
   const [commandPress, setCommandPress] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (refresh) {
@@ -56,9 +57,11 @@ export const DataProvider = ({ children }) => {
         dark,
         setDark,
         terminalOutput,
-        setCommandPress,
-        commandPress,
         setTerminalOutput,
+        commandPress,
+        setCommandPress,
+        isLoading,
+        setIsLoading,
       }}
     >
       {children}
