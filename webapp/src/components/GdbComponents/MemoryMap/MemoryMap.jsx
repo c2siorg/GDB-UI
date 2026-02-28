@@ -15,12 +15,12 @@ const data = [
   "0x7fffffffe270: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00",
 ];
 const MemoryMap = () => {
-  const { refresh, memoryMap, setMemoryMap } = DataState();
+  const { memoryMap, setMemoryMap, refresh, fileName } = DataState();
 
   const fetchMemoryMap = async () => {
     console.log("Click form memory map");
     const data = await axios.post("http://127.0.0.1:10000/memory_map", {
-      name: "program",
+      name: fileName,
     });
     console.log(data.data.result);
     setMemoryMap(data.data.result);
@@ -37,10 +37,10 @@ const MemoryMap = () => {
         {memoryMap
           ? memoryMap
           : data?.length > 0
-          ? data.map((obj) => {
+            ? data.map((obj) => {
               return <a>{obj}</a>;
             })
-          : ""}
+            : ""}
       </div>
     </div>
   );

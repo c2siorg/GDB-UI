@@ -5,7 +5,7 @@ import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
 
 const TerminalComp = () => {
-  const { terminalOutput, commandPress } = DataState();
+  const { terminalOutput, commandPress, fileName } = DataState();
   const [output, setOutput] = useState("");
   const terminalRef = useRef("null");
 
@@ -15,7 +15,7 @@ const TerminalComp = () => {
     try {
       const { data } = await axios.post("http://127.0.0.1:10000/gdb_command", {
         command: fullCommand,
-        name: "program",
+        name: fileName,
       });
       return data["result"];
     } catch (error) {

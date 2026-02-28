@@ -17,13 +17,13 @@ const data = [
 ];
 
 const Functions = () => {
-  const { refresh, functions, setFunctions } = DataState();
+  const { functions, setFunctions, refresh, fileName } = DataState();
 
   const fetchFunctionsData = async () => {
     try {
       console.log("click from functions");
       const data = await axios.post("http://127.0.0.1:10000/get_locals", {
-        name: "program",
+        name: fileName,
       });
       console.log(data.data.result);
       setFunctions(data.data.result);

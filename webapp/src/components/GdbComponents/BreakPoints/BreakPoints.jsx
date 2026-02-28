@@ -23,11 +23,11 @@ const data = [
 ];
 
 const BreakPoints = () => {
-  const { refresh, setInfoBreakpointData, infoBreakpointData } = DataState();
+  const { refresh, setInfoBreakpointData, infoBreakpointData, fileName } = DataState();
 
   const fetchInfoBreakpoints = async () => {
     const data = await axios.post("http://127.0.0.1:10000/info_breakpoints", {
-      name: "program",
+      name: fileName,
     });
     console.log(data.data["result"]);
     setInfoBreakpointData(data.data["result"]);
@@ -45,7 +45,7 @@ const BreakPoints = () => {
         {infoBreakpointData
           ? infoBreakpointData
           : data?.length > 0
-          ? data.map((obj) => {
+            ? data.map((obj) => {
               return (
                 <div>
                   <div>{obj.offset}</div>
@@ -53,8 +53,8 @@ const BreakPoints = () => {
                 </div>
               );
             })
-          : infoBreakpointData}
-        {}
+            : infoBreakpointData}
+        { }
       </div>
     </div>
   );
