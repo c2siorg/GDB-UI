@@ -3,6 +3,7 @@ from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
 import subprocess
 import os
+import re
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -10,6 +11,35 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 gdb_controller = None
 program_name = None
+
+# Allowlist of permitted GDB commands
+LIMITED_GDB_COMMANDS = (
+    "break ", "break\n",
+    "delete ", "delete\n",
+    "info breakpoints",
+    "info registers",
+    "info threads",
+    "info functions",
+    "info locals",
+    "info proc mappings",
+    "watch ",
+    "continue", "next", "step", "finish",
+    "run", "bt",
+)
+
+def is_safe_gdb_command(command: str) -> bool:
+    if not isinstance(command, str):
+        return False
+    cmd = command.strip()
+    return any(cmd == allowed.strip() or cmd.startswith(allowed)
+               for allowed in LIMITED_GDB_COMMANDS)
+
+def sanitize_name(name: str) -> str:
+    if not isinstance(name, str):
+        raise ValueError("Name must be a string")
+    if not re.match(r'^[\w\-\.]+$', name):
+        raise ValueError(f"Invalid name: {name!r}")
+    return name
 
 def execute_gdb_command(command):
     response2 = gdb_controller.write(command)
@@ -51,8 +81,17 @@ def gdb_command():
     data = request.get_json()
     command = data.get('command')
     file = data.get('name')
+
+    if not is_safe_gdb_command(command):
+        return jsonify({'success': False, 'error': 'Command not permitted.'}), 403
+
+    try:
+        file = sanitize_name(file)
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(file)
 
     try:
         result = execute_gdb_command(command)
@@ -77,6 +116,12 @@ def compile_code():
     code = data.get('code')
     name = data.get('name')
 
+    # Security: prevent path traversal via name field
+    try:
+        name = sanitize_name(name)
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
     with open(f'{name}.cpp', 'w') as file:
         file.write(code)
 
@@ -98,6 +143,12 @@ def upload_file():
 
     if file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file'}), 400
+
+    # Security: prevent path traversal via name field
+    try:
+        name = sanitize_name(name)
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
 
     file_path = os.path.join('output/', ensure_exe_extension(name))
     file.save(file_path)
