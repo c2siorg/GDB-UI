@@ -19,7 +19,7 @@ const MemoryMap = () => {
 
   const fetchMemoryMap = async () => {
     console.log("Click form memory map");
-    const data = await axios.post("http://127.0.0.1:10000/memory_map", {
+    const data = await axios.post(`${import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:10000"}/memory_map`, {
       name: "program",
     });
     console.log(data.data.result);
@@ -37,10 +37,10 @@ const MemoryMap = () => {
         {memoryMap
           ? memoryMap
           : data?.length > 0
-          ? data.map((obj) => {
+            ? data.map((obj) => {
               return <a>{obj}</a>;
             })
-          : ""}
+            : ""}
       </div>
     </div>
   );

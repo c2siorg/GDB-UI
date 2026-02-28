@@ -18,7 +18,7 @@ const Breakpoint = () => {
       return;
     }
     try {
-      const data = await axios.post("http://127.0.0.1:10000/set_breakpoint", {
+      const data = await axios.post(`${import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:10000"}/set_breakpoint`, {
         location: breakLine,
         name: "program",
       });

@@ -13,7 +13,7 @@ const TerminalComp = () => {
     const fullCommand = [command, ...args].join(" ");
     console.log("Full Command:", fullCommand);
     try {
-      const { data } = await axios.post("http://127.0.0.1:10000/gdb_command", {
+      const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:10000"}/gdb_command`, {
         command: fullCommand,
         name: "program",
       });
