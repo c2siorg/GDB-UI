@@ -27,10 +27,6 @@ const Stack = () => {
       Offset
       <div className="stack">
         <div>{stack}</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
       </div>
     </div>
   );
