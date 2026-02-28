@@ -3,18 +3,7 @@ import { DataState } from "./../../context/DataContext";
 import "./Functions.css";
 import axios from "axios";
 
-const data = [
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-];
+
 
 const Functions = () => {
   const { refresh, functions, setFunctions } = DataState();
@@ -44,10 +33,6 @@ const Functions = () => {
       offset
       <div className="functions">
         {functions}
-        {data.map((obj) => {
-          return <a>{obj}</a>;
-        })}
-        {/* <a>sub.KERNEL32.dll_DeleteCritical_231</a> */}
       </div>
     </div>
   );
