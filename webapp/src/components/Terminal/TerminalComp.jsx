@@ -7,7 +7,7 @@ import { DataState } from "../../context/DataContext";
 const TerminalComp = () => {
   const { terminalOutput, commandPress } = DataState();
   const [output, setOutput] = useState("");
-  const terminalRef = useRef("null");
+  const terminalRef = useRef(null);
 
   const handleCommand = async (command, ...args) => {
     const fullCommand = [command, ...args].join(" ");
