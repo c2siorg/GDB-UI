@@ -4,16 +4,18 @@ import axios from "axios";
 import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:10000";
+
 const TerminalComp = () => {
   const { terminalOutput, commandPress } = DataState();
   const [output, setOutput] = useState("");
-  const terminalRef = useRef("null");
+  const terminalRef = useRef(null);
 
   const handleCommand = async (command, ...args) => {
     const fullCommand = [command, ...args].join(" ");
     console.log("Full Command:", fullCommand);
     try {
-      const { data } = await axios.post("http://127.0.0.1:10000/gdb_command", {
+      const { data } = await axios.post(`${API_BASE_URL}/gdb_command`, {
         command: fullCommand,
         name: "program",
       });

@@ -5,6 +5,8 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:10000";
+
 const Breakpoint = () => {
   const [breakLine, setBreakLine] = useState("");
   const [breakFunction, setBreakFunction] = useState("");
@@ -18,7 +20,7 @@ const Breakpoint = () => {
       return;
     }
     try {
-      const data = await axios.post("http://127.0.0.1:10000/set_breakpoint", {
+      const data = await axios.post(`${API_BASE_URL}/set_breakpoint`, {
         location: breakLine,
         name: "program",
       });
@@ -32,6 +34,7 @@ const Breakpoint = () => {
       });
     }
   };
+
   return (
     <div className="breakpoint-container">
       <div className="add-breakpoint">Add Breakpoint</div>
