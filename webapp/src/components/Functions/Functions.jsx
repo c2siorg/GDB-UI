@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { DataState } from "./../../context/DataContext";
 import "./Functions.css";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const data = [
   "sub.KERNEL32.dll_DeleteCritical_231",
@@ -28,7 +29,7 @@ const Functions = () => {
       console.log(data.data.result);
       setFunctions(data.data.result);
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to fetch Functions symbols");
     }
   };
 

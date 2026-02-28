@@ -2,20 +2,21 @@ import React, { useEffect } from "react";
 import { DataState } from "./../../context/DataContext";
 import "./Stack.css";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const Stack = () => {
-  const { refresh, stack, setStack } = DataState();
+  const { refresh, stack, setStack, fileName } = DataState();
 
   const fetStackData = async () => {
     try {
       console.log("click from stack");
       const data = await axios.post("http://127.0.0.1:10000/stack_trace", {
-        name: "program",
+        name: fileName || "program",
       });
       console.log(data.data.result);
       setStack(data.data.result);
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to fetch Stack trace data");
     }
   };
   useEffect(() => {

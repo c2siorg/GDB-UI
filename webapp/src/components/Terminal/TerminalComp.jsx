@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ReactTerminal } from "react-terminal";
+import { toast } from "react-toastify";
 import axios from "axios";
 import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
 
 const TerminalComp = () => {
-  const { terminalOutput, commandPress } = DataState();
+  const { terminalOutput, commandPress, fileName } = DataState();
   const [output, setOutput] = useState("");
-  const terminalRef = useRef("null");
+  const terminalRef = useRef(null);
 
   const handleCommand = async (command, ...args) => {
     const fullCommand = [command, ...args].join(" ");
@@ -15,10 +16,11 @@ const TerminalComp = () => {
     try {
       const { data } = await axios.post("http://127.0.0.1:10000/gdb_command", {
         command: fullCommand,
-        name: "program",
+        name: fileName || "program",
       });
       return data["result"];
     } catch (error) {
+      toast.error("Terminal command failed");
       return "Error executing command";
     }
   };

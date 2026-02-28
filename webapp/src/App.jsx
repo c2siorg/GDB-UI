@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Debug from "./pages/Debug/Debug";
 import Threads from "./components/GdbComponents/Threads/Threads";
 import LocalVariable from "./components/GdbComponents/LocalVariable/LocalVariable";
@@ -40,6 +42,7 @@ const App = () => {
         {/* You can add more routes here */}
       </Routes>
       <Footer />
+      <ToastContainer theme={isDarkMode} />
     </div>
   );
 };
