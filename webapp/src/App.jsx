@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import Debug from "./pages/Debug/Debug";
+import Demo from "./pages/Demo/Demo";
 import Threads from "./components/GdbComponents/Threads/Threads";
 import LocalVariable from "./components/GdbComponents/LocalVariable/LocalVariable";
 import Context from "./components/GdbComponents/Context/Context";
@@ -37,6 +38,7 @@ const App = () => {
           <Route path="memoryMap" element={<MemoryMap />} />
           <Route path="breakPoints" element={<BreakPoints />} />
         </Route>
+        <Route path="demo" element={<Demo />} />
         {/* You can add more routes here */}
       </Routes>
       <Footer />

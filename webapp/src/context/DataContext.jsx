@@ -5,10 +5,12 @@ import React, {
   useCallback,
   useContext,
 } from "react";
+import useSession from "../hooks/useSession";
 
 export const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
+  const { sessionId, loading: sessionLoading, error: sessionError } = useSession();
   const [isDarkMode, setDarkMode] = useState("dark");
   const [dark, setDark] = useState(false);
   const [refresh, setRefresh] = useState(false);
@@ -59,6 +61,9 @@ export const DataProvider = ({ children }) => {
         setCommandPress,
         commandPress,
         setTerminalOutput,
+        sessionId,
+        sessionLoading,
+        sessionError,
       }}
     >
       {children}

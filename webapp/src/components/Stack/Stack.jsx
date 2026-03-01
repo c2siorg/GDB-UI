@@ -1,19 +1,19 @@
 import React, { useEffect } from "react";
 import { DataState } from "./../../context/DataContext";
 import "./Stack.css";
-import axios from "axios";
+import { makeRequest } from "../../api";
 
 const Stack = () => {
-  const { refresh, stack, setStack } = DataState();
+  const { refresh, stack, setStack, sessionId } = DataState();
 
   const fetStackData = async () => {
     try {
       console.log("click from stack");
-      const data = await axios.post("http://127.0.0.1:10000/stack_trace", {
+      const response = await makeRequest("/stack_trace", {
         name: "program",
-      });
-      console.log(data.data.result);
-      setStack(data.data.result);
+      }, sessionId);
+      console.log(response.data.result);
+      setStack(response.data.result);
     } catch (error) {
       console.log(error);
     }
@@ -27,10 +27,6 @@ const Stack = () => {
       Offset
       <div className="stack">
         <div>{stack}</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
       </div>
     </div>
   );

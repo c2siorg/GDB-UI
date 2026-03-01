@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ReactTerminal } from "react-terminal";
-import axios from "axios";
+import { makeRequest } from "../../api";
 import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
 
 const TerminalComp = () => {
-  const { terminalOutput, commandPress } = DataState();
+  const { terminalOutput, commandPress, sessionId, sessionLoading, sessionError } = DataState();
   const [output, setOutput] = useState("");
   const terminalRef = useRef("null");
 
@@ -13,10 +13,10 @@ const TerminalComp = () => {
     const fullCommand = [command, ...args].join(" ");
     console.log("Full Command:", fullCommand);
     try {
-      const { data } = await axios.post("http://127.0.0.1:10000/gdb_command", {
+      const { data } = await makeRequest("/gdb_command", {
         command: fullCommand,
         name: "program",
-      });
+      }, sessionId);
       return data["result"];
     } catch (error) {
       return "Error executing command";
@@ -36,6 +36,14 @@ const TerminalComp = () => {
       defaultHandler(terminalOutput);
     }
   }, [commandPress]);
+
+  if (sessionLoading) {
+    return <div className="terminal">Initializing session...</div>;
+  }
+
+  if (sessionError) {
+    return <div className="terminal">Session error: {sessionError}</div>;
+  }
 
   return (
     <div className="terminal">

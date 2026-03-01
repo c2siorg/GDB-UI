@@ -3,11 +3,13 @@ import "./Breakpoint.css";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
+import { makeRequest } from "../../api";
+import { DataState } from "../../context/DataContext";
 
 const Breakpoint = () => {
   const [breakLine, setBreakLine] = useState("");
   const [breakFunction, setBreakFunction] = useState("");
+  const { sessionId, sessionLoading, sessionError } = DataState();
 
   const handleBreakSave = async (e) => {
     e.preventDefault();
@@ -18,10 +20,10 @@ const Breakpoint = () => {
       return;
     }
     try {
-      const data = await axios.post("http://127.0.0.1:10000/set_breakpoint", {
+      const data = await makeRequest("/set_breakpoint", {
         location: breakLine,
         name: "program",
-      });
+      }, sessionId);
       console.log(data);
       toast.success("Added breakpoint", {
         autoClose: 1000,
@@ -32,6 +34,15 @@ const Breakpoint = () => {
       });
     }
   };
+
+  if (sessionLoading) {
+    return <div className="breakpoint-container">Initializing session...</div>;
+  }
+
+  if (sessionError) {
+    return <div className="breakpoint-container">Session error: {sessionError}</div>;
+  }
+
   return (
     <div className="breakpoint-container">
       <div className="add-breakpoint">Add Breakpoint</div>

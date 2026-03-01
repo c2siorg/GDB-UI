@@ -1,32 +1,19 @@
 import React, { useEffect } from "react";
 import { DataState } from "./../../context/DataContext";
 import "./Functions.css";
-import axios from "axios";
-
-const data = [
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-];
+import { makeRequest } from "../../api";
 
 const Functions = () => {
-  const { refresh, functions, setFunctions } = DataState();
+  const { refresh, functions, setFunctions, sessionId } = DataState();
 
   const fetchFunctionsData = async () => {
     try {
       console.log("click from functions");
-      const data = await axios.post("http://127.0.0.1:10000/get_locals", {
+      const response = await makeRequest("/get_locals", {
         name: "program",
-      });
-      console.log(data.data.result);
-      setFunctions(data.data.result);
+      }, sessionId);
+      console.log(response.data.result);
+      setFunctions(response.data.result);
     } catch (error) {
       console.log(error);
     }
@@ -44,9 +31,6 @@ const Functions = () => {
       offset
       <div className="functions">
         {functions}
-        {data.map((obj) => {
-          return <a>{obj}</a>;
-        })}
         {/* <a>sub.KERNEL32.dll_DeleteCritical_231</a> */}
       </div>
     </div>
