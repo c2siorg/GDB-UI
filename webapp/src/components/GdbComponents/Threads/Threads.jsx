@@ -9,31 +9,42 @@ const Threads = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchThreadsData = async () => {
+  const fetchThreadsData = async (signal) => {
     setLoading(true);
     setError("");
     try {
       const response = await api.post("/threads", {
-        name: "temp",
+        name: "program",
       });
-      if (response.data.success) {
-        setThreads(response.data.result);
-      } else {
-        setError(response.data.error || "Failed to fetch threads");
+      if (!signal.aborted) {
+        if (response.data.success) {
+          setThreads(response.data.result);
+        } else {
+          setError(response.data.error || "Failed to fetch threads");
+        }
       }
     } catch (err) {
-      console.log(err);
-      setError("Failed to fetch threads");
+      if (!signal.aborted) {
+        console.log(err);
+        setError("Failed to fetch threads");
+      }
     } finally {
-      setLoading(false);
+      if (!signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchThreadsData();
+    const controller = new AbortController();
+    if (refresh) fetchThreadsData(controller.signal);
+    return () => controller.abort();
   }, [refresh]);
 
-  const hasThreads = threads && !threads.toLowerCase().includes("no threads");
+  const hasThreads =
+    typeof threads === "string" &&
+    threads.trim().length > 0 &&
+    !threads.toLowerCase().includes("no threads");
 
   return (
     <div>
