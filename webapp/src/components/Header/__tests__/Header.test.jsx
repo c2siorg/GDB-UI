@@ -1,21 +1,15 @@
-// Header.test.js
 import React from "react";
-import { render } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { render, screen } from "../../../test-utils";
 import Header from "../Header.jsx";
 
 test("renders Header component", () => {
-  const { getByAltText, getByText } = render(
-    <MemoryRouter>
-      <Header />
-    </MemoryRouter>
-  );
+  render(<Header />);
 
-  const imgElement = getByAltText("C2si");
+  const imgElement = screen.getByAltText(/C2SI/i);
   expect(imgElement).toBeInTheDocument();
   expect(imgElement).toHaveAttribute("src", "/src/assets/c2si.png"); // Ensure the path is correct
 
-  const loginLink = getByText("Login");
+  const loginLink = screen.getByText("Login");
   expect(loginLink).toBeInTheDocument();
   expect(loginLink).toHaveAttribute("href", "/login");
 });
