@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { DataState } from "./../../context/DataContext";
 import "./Stack.css";
 import axios from "axios";
+import API_BASE_URL from "../../config";
 
 const Stack = () => {
   const { refresh, stack, setStack } = DataState();
@@ -9,7 +10,7 @@ const Stack = () => {
   const fetStackData = async () => {
     try {
       console.log("click from stack");
-      const data = await axios.post("http://127.0.0.1:10000/stack_trace", {
+      const data = await axios.post(`${API_BASE_URL}/stack_trace`, {
         name: "program",
       });
       console.log(data.data.result);

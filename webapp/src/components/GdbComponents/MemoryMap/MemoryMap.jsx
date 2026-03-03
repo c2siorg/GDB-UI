@@ -3,6 +3,7 @@ import { DataState } from "./../../../context/DataContext";
 
 import "./MemoryMap.css";
 import axios from "axios";
+import API_BASE_URL from "../../../config";
 
 const data = [
   "0x7fffffffe270: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00",
@@ -19,7 +20,7 @@ const MemoryMap = () => {
 
   const fetchMemoryMap = async () => {
     console.log("Click form memory map");
-    const data = await axios.post("http://127.0.0.1:10000/memory_map", {
+    const data = await axios.post(`${API_BASE_URL}/memory_map`, {
       name: "program",
     });
     console.log(data.data.result);

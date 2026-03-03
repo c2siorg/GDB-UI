@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { DataState } from "./../../../context/DataContext";
 import "./BreakPoints.css";
 import axios from "axios";
+import API_BASE_URL from "../../../config";
 
 const data = [
   {
@@ -26,7 +27,7 @@ const BreakPoints = () => {
   const { refresh, setInfoBreakpointData, infoBreakpointData } = DataState();
 
   const fetchInfoBreakpoints = async () => {
-    const data = await axios.post("http://127.0.0.1:10000/info_breakpoints", {
+    const data = await axios.post(`${API_BASE_URL}/info_breakpoints`, {
       name: "program",
     });
     console.log(data.data["result"]);

@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { DataState } from "./../../context/DataContext";
 import "./Functions.css";
 import axios from "axios";
+import API_BASE_URL from "../../config";
 
 const data = [
   "sub.KERNEL32.dll_DeleteCritical_231",
@@ -22,7 +23,7 @@ const Functions = () => {
   const fetchFunctionsData = async () => {
     try {
       console.log("click from functions");
-      const data = await axios.post("http://127.0.0.1:10000/get_locals", {
+      const data = await axios.post(`${API_BASE_URL}/get_locals`, {
         name: "program",
       });
       console.log(data.data.result);
