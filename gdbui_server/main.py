@@ -101,6 +101,7 @@ def compile_code():
         return err
     code = data.get('code')
     name = data.get('name')
+    session_id = data.get('session_id')
 
     if not code or not name:
         return jsonify({'success': False, 'output': 'code and name are required'}), 400
@@ -110,13 +111,15 @@ def compile_code():
     except ValueError as e:
         return jsonify({'success': False, 'output': str(e)}), 400
 
-    src_path = os.path.join('output', f'{safe_name}.cpp')
-    exe_path = os.path.join('output', f'{safe_name}.exe')
+    session_output_dir = os.path.join('output', session_id)
+    os.makedirs(session_output_dir, exist_ok=True)
+    file_path = os.path.join(session_output_dir, ensure_exe_extension(name))
+    source_file = file_path.replace('.exe', '.cpp')
 
-    with open(src_path, 'w') as file:
+    with open(source_file, 'w') as file:
         file.write(code)
 
-    result = subprocess.run(['g++', src_path, '-o', exe_path], capture_output=True, text=True)
+    result = subprocess.run(['g++', source_file, '-o', file_path], capture_output=True, text=True)
 
     if result.returncode == 0:
         return jsonify({'success': True, 'output': 'Compilation successful.'})
@@ -131,6 +134,7 @@ def upload_file():
 
     file = request.files['file']
     name = request.form['name']
+    session_id = request.form.get('session_id')
 
     if file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file'}), 400
@@ -140,7 +144,9 @@ def upload_file():
     except ValueError as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
-    file_path = os.path.join('output', ensure_exe_extension(safe_name))
+    session_output_dir = os.path.join('output', session_id)
+    os.makedirs(session_output_dir, exist_ok=True)
+    file_path = os.path.join(session_output_dir, ensure_exe_extension(name))
     file.save(file_path)
 
     return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})

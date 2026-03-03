@@ -144,6 +144,9 @@ class SessionManager:
         session_lock = self._get_session_lock(session_id)
 
         with session_lock:
+            session_output_dir = os.path.join('output', session_id)
+            os.makedirs(session_output_dir, exist_ok=True)
+
             with self.lock:
                 session = self.sessions.get(session_id)
                 if session is None:

@@ -221,6 +221,17 @@ class TestSessionManager(unittest.TestCase):
 
         sm.shutdown()
 
+    def test_session_output_directory_created(self):
+        sm = SessionManager()
+        session_id = sm.create_session()
+        try:
+            sm.start_gdb(session_id, 'test_program')
+        except Exception:
+            pass  # GDB may not be installed in test env
+        expected_dir = os.path.join('output', session_id)
+        self.assertTrue(os.path.exists(expected_dir))
+        sm.end_session(session_id)
+
 
 if __name__ == '__main__':
     unittest.main()
