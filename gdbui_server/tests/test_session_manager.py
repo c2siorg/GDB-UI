@@ -19,8 +19,9 @@ class TestSessionManager(unittest.TestCase):
         controller.exit.return_value = None
         return controller
 
+    @patch('session_manager.os.path.exists', return_value=True)
     @patch('session_manager.GdbController')
-    def test_two_sessions_independent(self, MockGdbController):
+    def test_two_sessions_independent(self, MockGdbController, mock_exists):
         controllers = [self._make_mock_controller(), self._make_mock_controller()]
         MockGdbController.side_effect = controllers
 
@@ -130,8 +131,9 @@ class TestSessionManager(unittest.TestCase):
 
         sm.shutdown()
 
+    @patch('session_manager.os.path.exists', return_value=True)
     @patch('session_manager.GdbController')
-    def test_ensure_program_skips_same(self, MockGdbController):
+    def test_ensure_program_skips_same(self, MockGdbController, mock_exists):
         MockGdbController.return_value = self._make_mock_controller()
 
         sm = SessionManager()
@@ -145,8 +147,9 @@ class TestSessionManager(unittest.TestCase):
 
         sm.shutdown()
 
+    @patch('session_manager.os.path.exists', return_value=True)
     @patch('session_manager.GdbController')
-    def test_ensure_program_switches(self, MockGdbController):
+    def test_ensure_program_switches(self, MockGdbController, mock_exists):
         controllers = [self._make_mock_controller(), self._make_mock_controller()]
         MockGdbController.side_effect = controllers
 

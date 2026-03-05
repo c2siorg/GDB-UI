@@ -8,6 +8,7 @@ import threading
 import time
 import os
 import re
+import shutil
 import logging
 from pygdbmi.gdbcontroller import GdbController
 
@@ -137,6 +138,7 @@ class SessionManager:
             except Exception as e:
                 logger.warning("Failed to exit controller for session %s: %s", session_id, e)
         if session:
+            shutil.rmtree(os.path.join('output', session_id), ignore_errors=True)
             logger.info("Session ended: %s", session_id)
 
     def start_gdb(self, session_id, program):
@@ -164,6 +166,8 @@ class SessionManager:
             controller = GdbController()
             try:
                 exe_path = os.path.join('output', ensure_exe_extension(safe_name))
+                if not os.path.exists(exe_path):
+                    raise RuntimeError(f"Binary not found at {exe_path}. Please compile your program first.")
                 controller.write(f"-file-exec-and-symbols {exe_path}", timeout_sec=GDB_TIMEOUT)
                 controller.write("run", timeout_sec=GDB_TIMEOUT)
             except Exception:
