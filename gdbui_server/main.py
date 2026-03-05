@@ -1,449 +1,156 @@
 from flask import Flask, request, jsonify
-from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
-import subprocess
-import os
+from session_manager import SessionManager, sanitize_program_name
+import os, atexit, signal, sys, subprocess, logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-cors = CORS(app)
-app.config['CORS_HEADERS'] = 'Content-Type'
+CORS(app)
 
-gdb_controller = None
-program_name = None
+session_manager = SessionManager()
 
-def execute_gdb_command(command):
-    response2 = gdb_controller.write(command)
-    if response2 is None:
-        raise RuntimeError("No response from GDB controller")
-    strm = ""
-    for rem in response2:
-        strm = strm + "\n " + str(rem.get('payload'))
-    return strm.strip()
+def shutdown_handler(signum=None, frame=None):
+    """Graceful cleanup of all session resources on system signal."""
+    session_manager.shutdown()
+    sys.exit(0)
 
-def ensure_exe_extension(name):
-    return name if name.endswith('.exe') else name + '.exe'
+atexit.register(session_manager.shutdown)
+signal.signal(signal.SIGTERM, shutdown_handler)
 
-def start_gdb_session(program):
-    global gdb_controller, program_name
-    program_name = program
-    try:
-        gdb_controller = GdbController()
-    except Exception as e:
-        raise RuntimeError(f"Failed to initialize GDB controller: {e}")
+def handle_gdb_request(command_template):
+    """
+    Higher-order dispatcher that standardizes GDB command execution
+    and ensures just-in-time debugger initialization.
+    """
+    data = request.get_json(silent=True) or {}
+    session_id = data.get('session_id')
+    program_name = data.get('name')
+
+    if not session_id or not session_manager.session_exists(session_id):
+        return jsonify({'success': False, 'error': 'Invalid or expired session'}), 404
 
     try:
-        response = gdb_controller.write(f"-file-exec-and-symbols {os.path.join('output/', ensure_exe_extension(program_name))}")
-        if response is None:
-            raise RuntimeError("No response from GDB controller")
-    except Exception as e:
-        raise RuntimeError(f"Failed to set program file: {e}")
-    
-    try:
-        response = gdb_controller.write("run")
-        if response is None:
-            raise RuntimeError("No response from GDB controller")
-    except Exception as e:
-        raise RuntimeError(f"Failed to start program: {e}")
+        if program_name:
+            session_manager.start_gdb(session_id, program_name)
 
-@app.route('/gdb_command', methods=['POST'])
-def gdb_command():
-    global program_name
-    data = request.get_json()
-    command = data.get('command')
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command(command)
-        response = {
+        cmd = command_template.format(**data) if '{' in command_template else command_template
+        result = session_manager.execute(session_id, cmd)
+        
+        return jsonify({
             'success': True,
             'result': result,
-            'code': f"execute_gdb_command('{command}')"
-        }
+            'code': f"execute_gdb_command('{cmd}')"
+        })
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('{command}')"
-        }
-    
-    return jsonify(response)
+        logger.error(f"GDB Execution Error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/create_session', methods=['POST'])
+def create():
+    """Initializes a unique session and its physical sandbox."""
+    return jsonify({'success': True, 'session_id': session_manager.create_session()})
+
+@app.route('/end_session', methods=['POST'])
+def end():
+    data = request.get_json(silent=True) or {}
+    session_id = data.get('session_id')
+    if session_id:
+        session_manager.end_session(session_id)
+        return jsonify({'success': True})
+    return jsonify({'success': False, 'error': 'session_id required'}), 400
 
 @app.route('/compile', methods=['POST'])
 def compile_code():
-    global program_name
-    data = request.get_json()
+    """Compiles source code within the isolated session sandbox."""
+    data = request.get_json(silent=True) or {}
+    session_id = data.get('session_id')
     code = data.get('code')
     name = data.get('name')
 
-    with open(f'{name}.cpp', 'w') as file:
-        file.write(code)
+    if not all([session_id, code, name]):
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
-    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
+    try:
+        safe_name = sanitize_program_name(name)
+        session_dir = session_manager.get_session_dir(session_id)
+        
+        src_path = os.path.join(session_dir, f"{safe_name}.cpp")
+        exe_path = os.path.join(session_dir, safe_name)
 
-    if result.returncode == 0:
-        program_name = None
-        return jsonify({'success': True, 'output': 'Compilation successful.'})
-    else:
-        return jsonify({'success': False, 'output': result.stderr})
+        with open(src_path, 'w') as f:
+            f.write(code)
 
-@app.route('/upload_file', methods=['POST'])    
-def upload_file():
-    if 'file' not in request.files or 'name' not in request.form:
-        return jsonify({'success': False, 'error': 'No file or name provided'}), 400
+        res = subprocess.run(['g++', src_path, '-o', exe_path], capture_output=True, text=True)
+        
+        return jsonify({
+            'success': res.returncode == 0, 
+            'output': 'Compilation successful.' if res.returncode == 0 else res.stderr
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-    file = request.files['file']
-    name = request.form['name']
+@app.route('/upload_file', methods=['POST'])
+def upload():
+    """Uploads a binary directly to the session's physical sandbox."""
+    session_id = request.form.get('session_id')
+    file = request.files.get('file')
+    name = request.form.get('name')
+    
+    if not all([session_id, file, name]) or not session_manager.session_exists(session_id):
+        return jsonify({'success': False, 'error': 'Invalid request parameters'}), 400
 
-    if file.filename == '':
-        return jsonify({'success': False, 'error': 'No selected file'}), 400
+    try:
+        safe_name = sanitize_program_name(name)
+        file_path = os.path.join(session_manager.get_session_dir(session_id), safe_name)
+        file.save(file_path)
+        return jsonify({'success': True, 'message': 'File isolated in sandbox'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-    file_path = os.path.join('output/', ensure_exe_extension(name))
-    file.save(file_path)
-
-    return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})
-
+@app.route('/gdb_command', methods=['POST'])
+def gdb_cmd(): return handle_gdb_request("{command}")
 
 @app.route('/set_breakpoint', methods=['POST'])
-def set_breakpoint():
-    global program_name
-    data = request.get_json()
-    location = data.get('location')
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command(f"break {location}")
-        response = {
-            'success': True,
-            'result': result,
-            'code': f"execute_gdb_command('break {location}')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('break {location}')"
-        }
-    
-    return jsonify(response)
-
-@app.route('/info_breakpoints', methods=['POST'])
-def info_breakpoints():
-    global program_name
-    data = request.get_json()
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command("info breakpoints")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info breakpoints')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info breakpoints')"
-        }
-    
-    return jsonify(response)
+def set_bp(): return handle_gdb_request("break {location}")
 
 @app.route('/stack_trace', methods=['POST'])
-def stack_trace():
-    global program_name
-    data = request.get_json()
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command("bt")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('bt')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('bt')"
-        }
-    
-    return jsonify(response)
-
-@app.route('/threads', methods=['POST'])
-def threads():
-    global program_name
-    data = request.get_json()
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command("info threads")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info threads')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info threads')"
-        }
-    
-    return jsonify(response)
-
-@app.route('/get_registers', methods=['POST'])
-def get_registers():
-    global program_name
-    data = request.get_json()
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command("info registers")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info registers')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info registers')"
-        }
-    
-    return jsonify(response)
-
-@app.route('/get_locals', methods=['POST'])
-def get_locals():
-    global program_name
-    data = request.get_json()
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command("info locals")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info locals')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info locals')"
-        }
-    
-    return jsonify(response)
+def bt(): return handle_gdb_request("bt")
 
 @app.route('/run', methods=['POST'])
-def run_program():
-    global program_name
-    data = request.get_json()
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command("run")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('run')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('run')"
-        }
-    
-    return jsonify(response)
-
-@app.route('/memory_map', methods=['POST'])
-def memory_map():
-    global program_name
-    data = request.get_json()
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command("info proc mappings")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info proc mappings')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info proc mappings')"
-        }
-    
-    return jsonify(response)
+def run(): return handle_gdb_request("run")
 
 @app.route('/continue', methods=['POST'])
-def continue_execution():
-    global program_name
-    data = request.get_json()
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command("continue")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('continue')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('continue')"
-        }
-    
-    return jsonify(response)
+def cont(): return handle_gdb_request("continue")
 
 @app.route('/step_over', methods=['POST'])
-def step_over():
-    global program_name
-    data = request.get_json()
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command("next")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('next')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('next')"
-        }
-    
-    return jsonify(response)
+def next_s(): return handle_gdb_request("next")
 
 @app.route('/step_into', methods=['POST'])
-def step_into():
-    global program_name
-    data = request.get_json()
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command("step")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('step')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('step')"
-        }
-    
-    return jsonify(response)
+def step(): return handle_gdb_request("step")
 
 @app.route('/step_out', methods=['POST'])
-def step_out():
-    global program_name
-    data = request.get_json()
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+def finish(): return handle_gdb_request("finish")
 
-    try:
-        result = execute_gdb_command("finish")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('finish')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('finish')"
-        }
-    
-    return jsonify(response)
+@app.route('/threads', methods=['POST'])
+def threads(): return handle_gdb_request("info threads")
+
+@app.route('/get_registers', methods=['POST'])
+def regs(): return handle_gdb_request("info registers")
+
+@app.route('/get_locals', methods=['POST'])
+def locals(): return handle_gdb_request("info functions")
+
+@app.route('/memory_map', methods=['POST'])
+def mmap(): return handle_gdb_request("info proc mappings")
 
 @app.route('/add_watchpoint', methods=['POST'])
-def add_watchpoint():
-    global program_name
-    data = request.get_json()
-    variable = data.get('variable')
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command(f"watch {variable}")
-        response = {
-            'success': True,
-            'result': result,
-            'code': f"execute_gdb_command('watch {variable}')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('watch {variable}')"
-        }
-    
-    return jsonify(response)
+def watch(): return handle_gdb_request("watch {variable}")
 
 @app.route('/delete_breakpoint', methods=['POST'])
-def delete_breakpoint():
-    global program_name
-    data = request.get_json()
-    breakpoint_number = data.get('breakpoint_number')
-    file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command(f"delete {breakpoint_number}")
-        response = {
-            'success': True,
-            'result': result,
-            'code': f"execute_gdb_command('delete {breakpoint_number}')"
-        }
-    except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('delete {breakpoint_number}')"
-        }
-    
-    return jsonify(response)
-
+def del_bp(): return handle_gdb_request("delete {breakpoint_number}")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
+    
