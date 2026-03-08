@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from werkzeug.utils import secure_filename
 from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
 import subprocess
@@ -75,7 +76,12 @@ def compile_code():
     global program_name
     data = request.get_json()
     code = data.get('code')
-    name = data.get('name')
+    
+    # Sanitize the filename to prevent path traversal
+    raw_name = data.get('name', 'default_program')
+    name = secure_filename(raw_name)
+    if not name:
+        name = 'default_program'
 
     with open(f'{name}.cpp', 'w') as file:
         file.write(code)
@@ -94,7 +100,14 @@ def upload_file():
         return jsonify({'success': False, 'error': 'No file or name provided'}), 400
 
     file = request.files['file']
-    name = request.form['name']
+    raw_name = request.form['name']
+    
+    # Sanitize the filename to prevent path traversal
+    name = secure_filename(raw_name)
+    if not name:
+        name = secure_filename(file.filename)
+        if not name:
+            return jsonify({'success': False, 'error': 'Invalid file name'}), 400
 
     if file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file'}), 400
