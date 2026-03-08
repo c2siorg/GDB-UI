@@ -1,26 +1,15 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { DataState } from "./../../context/DataContext";
 import "./Functions.css";
 import axios from "axios";
 
-const data = [
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-  "sub.KERNEL32.dll_DeleteCritical_231",
-];
-
 const Functions = () => {
   const { refresh, functions, setFunctions } = DataState();
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchFunctionsData = async () => {
     try {
+      setIsLoading(true);
       console.log("click from functions");
       const data = await axios.post("http://127.0.0.1:10000/get_locals", {
         name: "program",
@@ -29,6 +18,8 @@ const Functions = () => {
       setFunctions(data.data.result);
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -43,11 +34,13 @@ const Functions = () => {
       <a className="functions-heading"> Functions</a>
       offset
       <div className="functions">
-        {functions}
-        {data.map((obj) => {
-          return <a>{obj}</a>;
-        })}
-        {/* <a>sub.KERNEL32.dll_DeleteCritical_231</a> */}
+        {isLoading ? (
+          <div style={{ opacity: 0.5, fontStyle: "italic", padding: "10px" }}>Loading functions...</div>
+        ) : functions ? (
+          functions
+        ) : (
+          <div style={{ opacity: 0.5, fontStyle: "italic", padding: "10px" }}>No functions traced yet. Break into execution to inspect frames.</div>
+        )}
       </div>
     </div>
   );
