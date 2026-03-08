@@ -3,6 +3,7 @@ from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
 import subprocess
 import os
+import atexit
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -10,6 +11,30 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 gdb_controller = None
 program_name = None
+
+def close_gdb_session():
+    global gdb_controller, program_name
+
+    if gdb_controller is None:
+        program_name = None
+        return
+
+    try:
+        gdb_controller.exit()
+    except Exception:
+        # Fallback for partially initialized controllers.
+        gdb_process = getattr(gdb_controller, "gdb_process", None)
+        if gdb_process is not None:
+            try:
+                gdb_process.terminate()
+                gdb_process.wait(timeout=1)
+            except Exception:
+                pass
+    finally:
+        gdb_controller = None
+        program_name = None
+
+atexit.register(close_gdb_session)
 
 def execute_gdb_command(command):
     response2 = gdb_controller.write(command)
@@ -25,10 +50,12 @@ def ensure_exe_extension(name):
 
 def start_gdb_session(program):
     global gdb_controller, program_name
+    close_gdb_session()
     program_name = program
     try:
         gdb_controller = GdbController()
     except Exception as e:
+        close_gdb_session()
         raise RuntimeError(f"Failed to initialize GDB controller: {e}")
 
     try:
@@ -36,6 +63,7 @@ def start_gdb_session(program):
         if response is None:
             raise RuntimeError("No response from GDB controller")
     except Exception as e:
+        close_gdb_session()
         raise RuntimeError(f"Failed to set program file: {e}")
     
     try:
@@ -43,6 +71,7 @@ def start_gdb_session(program):
         if response is None:
             raise RuntimeError("No response from GDB controller")
     except Exception as e:
+        close_gdb_session()
         raise RuntimeError(f"Failed to start program: {e}")
 
 @app.route('/gdb_command', methods=['POST'])
@@ -72,7 +101,6 @@ def gdb_command():
 
 @app.route('/compile', methods=['POST'])
 def compile_code():
-    global program_name
     data = request.get_json()
     code = data.get('code')
     name = data.get('name')
@@ -83,7 +111,7 @@ def compile_code():
     result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
 
     if result.returncode == 0:
-        program_name = None
+        close_gdb_session()
         return jsonify({'success': True, 'output': 'Compilation successful.'})
     else:
         return jsonify({'success': False, 'output': result.stderr})

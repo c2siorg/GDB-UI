@@ -104,7 +104,7 @@ To run the backend tests, use the following procedure:
 3. Run the tests using the `unittest` module:
 
     ```sh
-    python -m unittest discover -s tests
+    python -m unittest discover -s . -p 'flask_test.py'
     ```
 
 ## Contributing
@@ -144,4 +144,3 @@ We welcome contributions from the community! To get started:
 ## Design
 
 https://www.figma.com/proto/flJ4HBaH4QhF18RSKGOWwA/GDB-UI?type=design&node-id=111-1101&t=sDAc1dWc1LAfqpaT-0&scaling=min-zoom&page-id=0%3A1&starting-point-node-id=111%3A2956
-
