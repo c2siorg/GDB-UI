@@ -5,7 +5,7 @@ from flask import Flask
 from flask_testing import TestCase
 from unittest import mock
 from io import BytesIO
-from main import app
+from main import app, close_gdb_session
 import os
 
 class TestGDBRoutes(TestCase):
@@ -14,6 +14,7 @@ class TestGDBRoutes(TestCase):
         return app
 
     def setUp(self):
+        close_gdb_session()
         self.temp_dir = tempfile.TemporaryDirectory()
 
         compile_payload = {
@@ -23,6 +24,7 @@ class TestGDBRoutes(TestCase):
         self.client.post('/compile', data=json.dumps(compile_payload), content_type='application/json')
 
     def tearDown(self):
+        close_gdb_session()
         self.temp_dir.cleanup()
 
 
