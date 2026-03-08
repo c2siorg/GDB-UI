@@ -3,6 +3,7 @@ from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
 import subprocess
 import os
+import uuid
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -77,13 +78,28 @@ def compile_code():
     code = data.get('code')
     name = data.get('name')
 
-    with open(f'{name}.cpp', 'w') as file:
+    # Use UUID to prevent compilation race conditions
+    unique_id = str(uuid.uuid4())
+    temp_cpp_file = f'{name}_{unique_id}.cpp'
+    output_exe_file = f'output/{name}_{unique_id}.exe'
+
+    with open(temp_cpp_file, 'w') as file:
         file.write(code)
 
-    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
+    result = subprocess.run(['g++', temp_cpp_file, '-o', output_exe_file], capture_output=True, text=True)
+
+    # Clean up the temporary cpp file
+    if os.path.exists(temp_cpp_file):
+        os.remove(temp_cpp_file)
 
     if result.returncode == 0:
         program_name = None
+        # Rename the successful executable back to the expected name
+        final_exe_file = f'output/{name}.exe'
+        if os.path.exists(final_exe_file):
+            os.remove(final_exe_file)
+        os.rename(output_exe_file, final_exe_file)
+        
         return jsonify({'success': True, 'output': 'Compilation successful.'})
     else:
         return jsonify({'success': False, 'output': result.stderr})
