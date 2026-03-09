@@ -4,9 +4,14 @@ from flask_cors import CORS
 import subprocess
 import os
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.join(BASE_DIR, 'output')
+
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 gdb_controller = None
 program_name = None
@@ -32,7 +37,7 @@ def start_gdb_session(program):
         raise RuntimeError(f"Failed to initialize GDB controller: {e}")
 
     try:
-        response = gdb_controller.write(f"-file-exec-and-symbols {os.path.join('output/', ensure_exe_extension(program_name))}")
+        response = gdb_controller.write(f"-file-exec-and-symbols {os.path.join(OUTPUT_DIR, ensure_exe_extension(program_name))}")
         if response is None:
             raise RuntimeError("No response from GDB controller")
     except Exception as e:
@@ -77,10 +82,13 @@ def compile_code():
     code = data.get('code')
     name = data.get('name')
 
-    with open(f'{name}.cpp', 'w') as file:
+    cpp_file_path = os.path.join(OUTPUT_DIR, f'{name}.cpp')
+    exe_file_path = os.path.join(OUTPUT_DIR, f'{name}.exe')
+
+    with open(cpp_file_path, 'w') as file:
         file.write(code)
 
-    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
+    result = subprocess.run(['g++', cpp_file_path, '-o', exe_file_path], capture_output=True, text=True)
 
     if result.returncode == 0:
         program_name = None
@@ -99,7 +107,7 @@ def upload_file():
     if file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file'}), 400
 
-    file_path = os.path.join('output/', ensure_exe_extension(name))
+    file_path = os.path.join(OUTPUT_DIR, ensure_exe_extension(name))
     file.save(file_path)
 
     return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})

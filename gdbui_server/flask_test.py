@@ -208,8 +208,8 @@ class TestGDBRoutes(TestCase):
 
         mock_save.assert_called_once()
 
-        expected_path = 'output/test_program.exe'
-        self.assertEqual(response_data['file_path'], expected_path)
+        expected_path_suffix = 'output/test_program.exe'
+        self.assertTrue(response_data['file_path'].endswith(expected_path_suffix))
 
     @mock.patch('werkzeug.datastructures.FileStorage.save')
     def test_upload_file_no_file(self, mock_save):
