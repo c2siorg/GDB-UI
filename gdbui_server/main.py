@@ -7,6 +7,36 @@ import os
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # Limit to 2MB
+
+gdb_controller = None
+program_name = None
+
+class SessionManager:
+    def __init__(self, max_sessions=50):
+        self.max_sessions = max_sessions
+        self.active_sessions = 0
+
+    def cleanup_disk(self, name):
+        import shutil
+        path = os.path.join('output', name)
+        if os.path.exists(path):
+            try:
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                else:
+                    os.remove(path)
+            except:
+                pass
+
+    def check_limit(self):
+        # A simple placeholder max session logic since we don't track persistent IDs currently
+        if self.active_sessions >= self.max_sessions:
+            return False
+        return True
+
+session_manager = SessionManager()
+
 
 gdb_controller = None
 program_name = None
@@ -77,10 +107,16 @@ def compile_code():
     code = data.get('code')
     name = data.get('name')
 
+    if code and len(code) > 100000:
+        return jsonify({'success': False, 'output': 'Code length exceeds limit of 100,000 characters.'}), 413
+
     with open(f'{name}.cpp', 'w') as file:
         file.write(code)
 
-    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
+    try:
+        result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:
+        return jsonify({'success': False, 'output': 'Compilation timed out after 30 seconds limit.'}), 408
 
     if result.returncode == 0:
         program_name = None
