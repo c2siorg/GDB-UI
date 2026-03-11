@@ -18,8 +18,9 @@ const Breakpoint = () => {
       return;
     }
     try {
+      const location = breakFunction ? breakFunction : breakLine;
       const data = await axios.post("http://127.0.0.1:10000/set_breakpoint", {
-        location: breakLine,
+        location: location,
         name: "program",
       });
       console.log(data);

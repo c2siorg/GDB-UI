@@ -109,7 +109,12 @@ def upload_file():
 def set_breakpoint():
     global program_name
     data = request.get_json()
-    location = data.get('location')
+    location = str(data.get('location', ''))
+    
+    import re
+    if not re.match(r'^[a-zA-Z0-9_:*]+$', location):
+        return jsonify({'success': False, 'error': 'Invalid breakpoint location format.'}), 400
+
     file = data.get('name')
     if program_name != file:
         start_gdb_session(f'{file}')
