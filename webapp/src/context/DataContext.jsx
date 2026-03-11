@@ -31,6 +31,19 @@ export const DataProvider = ({ children }) => {
   }, [refresh]);
 
   useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const response = await axios.get("http://127.0.0.1:10000/get_csrf_token");
+        axios.defaults.headers.common["X-CSRFToken"] = response.data.csrf_token;
+        axios.defaults.withCredentials = true;
+      } catch (error) {
+        console.error("Error fetching CSRF token:", error);
+      }
+    };
+    fetchCsrfToken();
+  }, []);
+
+  useEffect(() => {
     fetchData();
   }, [fetchData]);
 
