@@ -12,6 +12,16 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 gdb_controller = None
 program_name = None
 
+@app.errorhandler(ValueError)
+def handle_value_error(e):
+    return jsonify({'success': False, 'error': str(e)}), 400
+
+def validate_name(name):
+    if not name or secure_filename(name) != name:
+        raise ValueError("Invalid file name")
+    return name
+
+
 def execute_gdb_command(command):
     response2 = gdb_controller.write(command)
     if response2 is None:
@@ -26,6 +36,7 @@ def ensure_exe_extension(name):
 
 def start_gdb_session(program):
     global gdb_controller, program_name
+    validate_name(program)
     program_name = program
     try:
         gdb_controller = GdbController()
@@ -76,12 +87,7 @@ def compile_code():
     global program_name
     data = request.get_json()
     code = data.get('code')
-    
-    # Sanitize the filename to prevent path traversal
-    raw_name = data.get('name', 'default_program')
-    name = secure_filename(raw_name)
-    if not name:
-        name = 'default_program'
+    name = validate_name(data.get('name', 'default_program'))
 
     with open(f'{name}.cpp', 'w') as file:
         file.write(code)
@@ -101,13 +107,9 @@ def upload_file():
 
     file = request.files['file']
     raw_name = request.form['name']
-    
-    # Sanitize the filename to prevent path traversal
-    name = secure_filename(raw_name)
-    if not name:
-        name = secure_filename(file.filename)
-        if not name:
-            return jsonify({'success': False, 'error': 'Invalid file name'}), 400
+    if not raw_name:
+        raw_name = file.filename
+    name = validate_name(raw_name)
 
     if file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file'}), 400
