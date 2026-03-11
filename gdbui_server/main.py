@@ -1,12 +1,20 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
 import subprocess
 import os
+import secrets
 
 app = Flask(__name__)
-cors = CORS(app)
+app.config['SECRET_KEY'] = secrets.token_hex(16)
+cors = CORS(app, supports_credentials=True)
 app.config['CORS_HEADERS'] = 'Content-Type'
+csrf = CSRFProtect(app)
+
+@app.route('/get_csrf_token', methods=['GET'])
+def get_csrf_token():
+    return jsonify({'csrf_token': generate_csrf()})
 
 gdb_controller = None
 program_name = None
