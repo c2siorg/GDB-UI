@@ -7,15 +7,5 @@ import { TerminalContextProvider } from "react-terminal";
 import App from "./App";
 import "./index.css";
 
-ReactDOM.render(
-  <BrowserRouter>
-    <DataProvider>
-      <TerminalContextProvider>
-        <React.StrictMode>
-          <App />
-        </React.StrictMode>
-      </TerminalContextProvider>
-    </DataProvider>
-  </BrowserRouter>,
-  document.getElementById("root")
-);
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
