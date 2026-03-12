@@ -26,7 +26,7 @@ const BreakPoints = () => {
   const { refresh, setInfoBreakpointData, infoBreakpointData } = DataState();
 
   const fetchInfoBreakpoints = async () => {
-    const data = await axios.post("http://127.0.0.1:10000/info_breakpoints", {
+    const data = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/get_locals`, {
       name: "program",
     });
     console.log(data.data["result"]);
