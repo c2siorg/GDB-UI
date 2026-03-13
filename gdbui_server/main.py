@@ -49,7 +49,11 @@ def start_gdb_session(program):
 def gdb_command():
     global program_name
     data = request.get_json()
+    if not data or "command" not in data:
+      return jsonify({"error": "Command is required"}), 400
     command = data.get('command')
+    if not command or not command.strip():
+      return jsonify({"error": "Command cannot be empty"}), 400
     file = data.get('name')
     if program_name != file:
         start_gdb_session(f'{file}')
@@ -62,20 +66,30 @@ def gdb_command():
             'code': f"execute_gdb_command('{command}')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('{command}')"
-        }
-    
-    return jsonify(response)
+        return jsonify({
+        "success": False,
+        "error": "GDB command execution failed",
+        "details": str(e)
+    }), 500
+
+def validate_request(data, required_fields):
+    if not data:
+        return ({"error": "No data provided"}, 400)
+    for field in required_fields:
+        if field not in data or not data[field]:
+            return ({"error": f"Missing or empty field: {field}"}, 400)
+    return None
 
 @app.route('/compile', methods=['POST'])
 def compile_code():
     global program_name
     data = request.get_json()
-    code = data.get('code')
-    name = data.get('name')
+    validation_error = validate_request(data, ["code", "name"])
+    if validation_error:
+      return jsonify(validation_error[0]), validation_error[1]
+
+    code = data["code"]
+    name = data["name"]
 
     with open(f'{name}.cpp', 'w') as file:
         file.write(code)
@@ -109,7 +123,13 @@ def upload_file():
 def set_breakpoint():
     global program_name
     data = request.get_json()
-    location = data.get('location')
+    data = request.get_json()
+
+    validation_error = validate_request(data, ["location", "name"])
+    if validation_error:
+       return jsonify(validation_error[0]), validation_error[1]
+    location = data["location"]
+    file = data["name"]   
     file = data.get('name')
     if program_name != file:
         start_gdb_session(f'{file}')
@@ -122,12 +142,11 @@ def set_breakpoint():
             'code': f"execute_gdb_command('break {location}')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('break {location}')"
-        }
-    
+        return jsonify({
+        "success": False,
+        "error": "GDB command execution failed",
+        "details": str(e)
+    }), 500
     return jsonify(response)
 
 @app.route('/info_breakpoints', methods=['POST'])
@@ -146,12 +165,11 @@ def info_breakpoints():
             'code': "execute_gdb_command('info breakpoints')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info breakpoints')"
-        }
-    
+        return jsonify({
+        "success": False,
+        "error": "GDB command execution failed",
+        "details": str(e)
+    }), 500
     return jsonify(response)
 
 @app.route('/stack_trace', methods=['POST'])
@@ -170,11 +188,11 @@ def stack_trace():
             'code': "execute_gdb_command('bt')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('bt')"
-        }
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
     
     return jsonify(response)
 
@@ -194,11 +212,11 @@ def threads():
             'code': "execute_gdb_command('info threads')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info threads')"
-        }
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
     
     return jsonify(response)
 
@@ -218,12 +236,12 @@ def get_registers():
             'code': "execute_gdb_command('info registers')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info registers')"
-        }
-    
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
+
     return jsonify(response)
 
 @app.route('/get_locals', methods=['POST'])
@@ -242,12 +260,12 @@ def get_locals():
             'code': "execute_gdb_command('info locals')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info locals')"
-        }
-    
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
+
     return jsonify(response)
 
 @app.route('/run', methods=['POST'])
@@ -266,12 +284,12 @@ def run_program():
             'code': "execute_gdb_command('run')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('run')"
-        }
-    
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
+
     return jsonify(response)
 
 @app.route('/memory_map', methods=['POST'])
@@ -290,12 +308,12 @@ def memory_map():
             'code': "execute_gdb_command('info proc mappings')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info proc mappings')"
-        }
-    
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
+
     return jsonify(response)
 
 @app.route('/continue', methods=['POST'])
@@ -314,12 +332,12 @@ def continue_execution():
             'code': "execute_gdb_command('continue')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('continue')"
-        }
-    
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
+
     return jsonify(response)
 
 @app.route('/step_over', methods=['POST'])
@@ -338,12 +356,12 @@ def step_over():
             'code': "execute_gdb_command('next')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('next')"
-        }
-    
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
+
     return jsonify(response)
 
 @app.route('/step_into', methods=['POST'])
@@ -362,13 +380,14 @@ def step_into():
             'code': "execute_gdb_command('step')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('step')"
-        }
-    
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
     return jsonify(response)
+
+    
 
 @app.route('/step_out', methods=['POST'])
 def step_out():
@@ -386,19 +405,21 @@ def step_out():
             'code': "execute_gdb_command('finish')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('finish')"
-        }
-    
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
     return jsonify(response)
 
 @app.route('/add_watchpoint', methods=['POST'])
 def add_watchpoint():
     global program_name
     data = request.get_json()
-    variable = data.get('variable')
+    validation_error = validate_request(data, ["variable", "name"])
+    if validation_error:
+      return jsonify(validation_error[0]), validation_error[1]
+    variable = data["variable"]
     file = data.get('name')
     if program_name != file:
         start_gdb_session(f'{file}')
@@ -411,19 +432,21 @@ def add_watchpoint():
             'code': f"execute_gdb_command('watch {variable}')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('watch {variable}')"
-        }
-    
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
     return jsonify(response)
 
 @app.route('/delete_breakpoint', methods=['POST'])
 def delete_breakpoint():
     global program_name
     data = request.get_json()
-    breakpoint_number = data.get('breakpoint_number')
+    validation_error = validate_request(data, ["breakpoint_number", "name"])
+    if validation_error:
+      return jsonify(validation_error[0]), validation_error[1]
+    breakpoint_number = data["breakpoint_number"]
     file = data.get('name')
     if program_name != file:
         start_gdb_session(f'{file}')
@@ -436,12 +459,11 @@ def delete_breakpoint():
             'code': f"execute_gdb_command('delete {breakpoint_number}')"
         }
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('delete {breakpoint_number}')"
-        }
-    
+        return jsonify({
+            "success": False,
+            "error": "GDB command execution failed",
+            "details": str(e)
+        }), 500
     return jsonify(response)
 
 
