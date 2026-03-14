@@ -226,6 +226,13 @@ def get_registers():
     
     return jsonify(response)
 
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({
+        'success': True,
+        'status': 'alive'
+    })
+
 @app.route('/get_locals', methods=['POST'])
 def get_locals():
     global program_name
