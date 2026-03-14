@@ -3,6 +3,7 @@ from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
 import subprocess
 import os
+import uuid
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -10,6 +11,12 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 gdb_controller = None
 program_name = None
+
+def create_sandbox():
+    sandbox_id = str(uuid.uuid4())
+    path = os.path.join("sandboxes", sandbox_id)
+    os.makedirs(path, exist_ok=True)
+    return sandbox_id, path
 
 def execute_gdb_command(command):
     response2 = gdb_controller.write(command)
@@ -23,7 +30,7 @@ def execute_gdb_command(command):
 def ensure_exe_extension(name):
     return name if name.endswith('.exe') else name + '.exe'
 
-def start_gdb_session(program):
+def start_gdb_session(program, sandbox_id="default"):
     global gdb_controller, program_name
     program_name = program
     try:
@@ -31,8 +38,10 @@ def start_gdb_session(program):
     except Exception as e:
         raise RuntimeError(f"Failed to initialize GDB controller: {e}")
 
+    exe_path = os.path.join("sandboxes", sandbox_id, ensure_exe_extension(program_name))
+
     try:
-        response = gdb_controller.write(f"-file-exec-and-symbols {os.path.join('output/', ensure_exe_extension(program_name))}")
+        response = gdb_controller.write(f"-file-exec-and-symbols {exe_path}")
         if response is None:
             raise RuntimeError("No response from GDB controller")
     except Exception as e:
@@ -45,10 +54,23 @@ def start_gdb_session(program):
     except Exception as e:
         raise RuntimeError(f"Failed to start program: {e}")
 
+    
+@app.route('/create_sandbox', methods=['POST'])
+def create_sandbox_route():
+    sandbox_id, path = create_sandbox()
+
+    return jsonify({
+        "success": True,
+        "sandbox_id": sandbox_id,
+        "path": path
+    }) 
+
 @app.route('/gdb_command', methods=['POST'])
 def gdb_command():
     global program_name
     data = request.get_json()
+    file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if not data or "command" not in data:
       return jsonify({"error": "Command is required"}), 400
     command = data.get('command')
@@ -56,7 +78,7 @@ def gdb_command():
       return jsonify({"error": "Command cannot be empty"}), 400
     file = data.get('name')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command(command)
@@ -84,17 +106,30 @@ def validate_request(data, required_fields):
 def compile_code():
     global program_name
     data = request.get_json()
+
     validation_error = validate_request(data, ["code", "name"])
     if validation_error:
       return jsonify(validation_error[0]), validation_error[1]
 
     code = data["code"]
     name = data["name"]
+    
+    sandbox_id = data.get("sandbox_id", "default")
+    sandbox_path = os.path.join("sandboxes", sandbox_id)
 
-    with open(f'{name}.cpp', 'w') as file:
+    os.makedirs(sandbox_path, exist_ok=True)
+
+    file_path = os.path.join(sandbox_path, f"{name}.cpp")
+    with open(file_path, 'w') as file:
         file.write(code)
 
-    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
+    exe_path = os.path.join(sandbox_path, f"{name}.exe")
+
+    result = subprocess.run(
+    ['g++', file_path, '-o', exe_path],
+    capture_output=True,
+    text=True
+    )
 
     if result.returncode == 0:
         program_name = None
@@ -131,8 +166,9 @@ def set_breakpoint():
     location = data["location"]
     file = data["name"]   
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command(f"break {location}")
@@ -154,8 +190,9 @@ def info_breakpoints():
     global program_name
     data = request.get_json()
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command("info breakpoints")
@@ -177,8 +214,9 @@ def stack_trace():
     global program_name
     data = request.get_json()
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command("bt")
@@ -201,8 +239,9 @@ def threads():
     global program_name
     data = request.get_json()
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command("info threads")
@@ -225,8 +264,9 @@ def get_registers():
     global program_name
     data = request.get_json()
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command("info registers")
@@ -249,8 +289,9 @@ def get_locals():
     global program_name
     data = request.get_json()
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command("info locals")
@@ -273,8 +314,9 @@ def run_program():
     global program_name
     data = request.get_json()
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command("run")
@@ -297,8 +339,9 @@ def memory_map():
     global program_name
     data = request.get_json()
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command("info proc mappings")
@@ -321,8 +364,9 @@ def continue_execution():
     global program_name
     data = request.get_json()
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command("continue")
@@ -345,8 +389,9 @@ def step_over():
     global program_name
     data = request.get_json()
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command("next")
@@ -369,8 +414,9 @@ def step_into():
     global program_name
     data = request.get_json()
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id )
 
     try:
         result = execute_gdb_command("step")
@@ -388,14 +434,14 @@ def step_into():
     return jsonify(response)
 
     
-
 @app.route('/step_out', methods=['POST'])
 def step_out():
     global program_name
     data = request.get_json()
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command("finish")
@@ -421,8 +467,9 @@ def add_watchpoint():
       return jsonify(validation_error[0]), validation_error[1]
     variable = data["variable"]
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command(f"watch {variable}")
@@ -448,8 +495,9 @@ def delete_breakpoint():
       return jsonify(validation_error[0]), validation_error[1]
     breakpoint_number = data["breakpoint_number"]
     file = data.get('name')
+    sandbox_id = data.get('sandbox_id', 'default')
     if program_name != file:
-        start_gdb_session(f'{file}')
+        start_gdb_session(f'{file}', sandbox_id)
 
     try:
         result = execute_gdb_command(f"delete {breakpoint_number}")
