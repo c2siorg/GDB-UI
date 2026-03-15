@@ -3,13 +3,23 @@ import "./Header.css";
 import c2si from "../../assets/c2si.png";
 import { Link } from "react-router-dom";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
+import SessionStatus from "../SessionStatus/SessionStatus";
+import { DataState } from "../../context/DataContext";
 
 const Header = ({ isDarkMode, toggleDarkMode, dark }) => {
+  const { connectionStatus, sessionId } = DataState();
+
   return (
     <div className="header">
       <div className="head">
         <div className="img">
           <img src={c2si} alt="C2si" />
+        </div>
+        <div className="session-status-container">
+          <SessionStatus
+            status={connectionStatus}
+            sessionId={sessionId}
+          />
         </div>
         <div className="login">
           <div className="darkmode">
