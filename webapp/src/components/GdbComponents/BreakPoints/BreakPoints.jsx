@@ -25,19 +25,29 @@ const data = [
 const BreakPoints = () => {
   const { refresh, setInfoBreakpointData, infoBreakpointData } = DataState();
 
-  const fetchInfoBreakpoints = async () => {
-    const data = await axios.post("http://127.0.0.1:10000/info_breakpoints", {
-      name: "program",
-    });
-    console.log(data.data["result"]);
-    setInfoBreakpointData(data.data["result"]);
-  };
+
   useEffect(() => {
-    if (refresh) {
-      console.log("click from breakpoint in GdbComponents");
-      fetchInfoBreakpoints();
-    }
-  }, [refresh]);
+    if (!refresh) return;
+
+    const controller = new AbortController();
+
+    const fetchInfoBreakpoints = async () => {
+      try {
+        const data = await axios.post("http://127.0.0.1:10000/info_breakpoints", {
+          name: "program",
+        }, { signal: controller.signal });
+        setInfoBreakpointData(data.data["result"]);
+      } catch (error) {
+        if (!axios.isCancel(error)) {
+          console.error("Breakpoints fetch failed:", error);
+        }
+      }
+    };
+
+    fetchInfoBreakpoints();
+
+    return () => controller.abort();
+  }, [refresh, setInfoBreakpointData]);
   return (
     <div>
       {/* BreakPoints */}

@@ -6,21 +6,29 @@ import axios from "axios";
 const Stack = () => {
   const { refresh, stack, setStack } = DataState();
 
-  const fetStackData = async () => {
-    try {
-      console.log("click from stack");
-      const data = await axios.post("http://127.0.0.1:10000/stack_trace", {
-        name: "program",
-      });
-      console.log(data.data.result);
-      setStack(data.data.result);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+
   useEffect(() => {
-    if (refresh) fetStackData();
-  }, [refresh]);
+    if (!refresh) return;
+
+    const controller = new AbortController();
+
+    const fetStackData = async () => {
+      try {
+        const data = await axios.post("http://127.0.0.1:10000/stack_trace", {
+          name: "program",
+        }, { signal: controller.signal });
+        setStack(data.data.result);
+      } catch (error) {
+        if (!axios.isCancel(error)) {
+          console.error("Stack fetch failed:", error);
+        }
+      }
+    };
+
+    fetStackData();
+
+    return () => controller.abort();
+  }, [refresh, setStack]);
   return (
     <div className="stack-parent">
       <div className="stack-heading">Stack</div>
