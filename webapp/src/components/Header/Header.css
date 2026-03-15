@@ -31,3 +31,8 @@ img {
   width: 20px;
   height: 20px;
 }
+
+.session-status-container {
+  display: flex;
+  align-items: center;
+}

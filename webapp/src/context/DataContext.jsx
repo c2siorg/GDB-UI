@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useContext,
 } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 export const DataContext = createContext();
 
@@ -18,6 +19,8 @@ export const DataProvider = ({ children }) => {
   const [memoryMap, setMemoryMap] = useState("");
   const [terminalOutput, setTerminalOutput] = useState("");
   const [commandPress, setCommandPress] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState("disconnected");
+  const [sessionId, setSessionId] = useState(null);
 
   const fetchData = useCallback(async () => {
     if (refresh) {
@@ -33,6 +36,16 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Generate session ID when connection is established
+  useEffect(() => {
+    if (connectionStatus === "connected" && !sessionId) {
+      setSessionId(uuidv4());
+    }
+    if (connectionStatus === "disconnected") {
+      setSessionId(null);
+    }
+  }, [connectionStatus]);
 
   const runCommandInTerminal = (command) => {
     setTerminalOutput(command);
@@ -59,6 +72,9 @@ export const DataProvider = ({ children }) => {
         setCommandPress,
         commandPress,
         setTerminalOutput,
+        connectionStatus,
+        setConnectionStatus,
+        sessionId,
       }}
     >
       {children}
