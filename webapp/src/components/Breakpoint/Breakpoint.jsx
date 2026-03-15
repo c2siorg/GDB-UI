@@ -22,7 +22,6 @@ const Breakpoint = () => {
         location: breakLine,
         name: "program",
       });
-      console.log(data);
       toast.success("Added breakpoint", {
         autoClose: 1000,
       });

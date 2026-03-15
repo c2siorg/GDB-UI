@@ -8,14 +8,11 @@ const Stack = () => {
 
   const fetStackData = async () => {
     try {
-      console.log("click from stack");
       const data = await axios.post("http://127.0.0.1:10000/stack_trace", {
         name: "program",
       });
-      console.log(data.data.result);
       setStack(data.data.result);
     } catch (error) {
-      console.log(error);
     }
   };
   useEffect(() => {
