@@ -15,20 +15,28 @@ const data = [
   "0x7fffffffe270: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00",
 ];
 const MemoryMap = () => {
-  const { refresh, memoryMap, setMemoryMap } = DataState();
-
-  const fetchMemoryMap = async () => {
-    console.log("Click form memory map");
-    const data = await axios.post("http://127.0.0.1:10000/memory_map", {
-      name: "program",
-    });
-    console.log(data.data.result);
-    setMemoryMap(data.data.result);
-  };
+  const { refresh, setRefresh, memoryMap, setMemoryMap } = DataState();
 
   useEffect(() => {
-    if (refresh) fetchMemoryMap();
-  }, [refresh]);
+    if (!refresh) return;
+
+    const fetchData = async () => {
+      try {
+        console.log("Click form memory map");
+        const data = await axios.post("http://127.0.0.1:10000/memory_map", {
+          name: "program",
+        });
+        console.log(data.data.result);
+        setMemoryMap(data.data.result);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setRefresh((prev) => (prev ? false : prev));
+      }
+    };
+
+    fetchData();
+  }, [refresh, setRefresh, setMemoryMap]);
 
   return (
     <div>

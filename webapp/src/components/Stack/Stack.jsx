@@ -4,23 +4,28 @@ import "./Stack.css";
 import axios from "axios";
 
 const Stack = () => {
-  const { refresh, stack, setStack } = DataState();
+  const { refresh, setRefresh, stack, setStack } = DataState();
 
-  const fetStackData = async () => {
-    try {
-      console.log("click from stack");
-      const data = await axios.post("http://127.0.0.1:10000/stack_trace", {
-        name: "program",
-      });
-      console.log(data.data.result);
-      setStack(data.data.result);
-    } catch (error) {
-      console.log(error);
-    }
-  };
   useEffect(() => {
-    if (refresh) fetStackData();
-  }, [refresh]);
+    if (!refresh) return;
+
+    const fetchData = async () => {
+      try {
+        console.log("click from stack");
+        const data = await axios.post("http://127.0.0.1:10000/stack_trace", {
+          name: "program",
+        });
+        console.log(data.data.result);
+        setStack(data.data.result);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setRefresh((prev) => (prev ? false : prev));
+      }
+    };
+
+    fetchData();
+  }, [refresh, setRefresh, setStack]);
   return (
     <div className="stack-parent">
       <div className="stack-heading">Stack</div>
