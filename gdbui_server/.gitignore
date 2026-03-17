@@ -22,3 +22,7 @@ ENV/
 lib/
 lib64/
 include/
+
+# Compiled test artifacts
+*.cpp
+*.exe
