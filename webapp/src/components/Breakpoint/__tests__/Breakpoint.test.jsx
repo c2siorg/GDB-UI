@@ -9,8 +9,11 @@ test("renders Breakpoint component with basic structure", () => {
   const addBreakpointElement = screen.getByText(/Add Breakpoint/i);
   expect(addBreakpointElement).toBeInTheDocument();
 
+  const watchLabel = screen.getByText(/Watch variable/i);
+  expect(watchLabel).toBeInTheDocument();
+
   const lineInputs = screen.getAllByRole("textbox");
-  expect(lineInputs).toHaveLength(2);
+  expect(lineInputs).toHaveLength(3);
 });
 
 test("renders Breakpoint component and checks about text Line", async () => {
@@ -26,4 +29,14 @@ test("typing in Line input updates the value correctly", () => {
   fireEvent.change(lineInput[0], { target: { value: "123" } });
 
   expect(lineInput[0]).toHaveValue("123");
+});
+
+test("typing in Watch variable input updates the value correctly", () => {
+  render(<Breakpoint />);
+
+  const textInputs = screen.getAllByRole("textbox");
+  const watchInput = textInputs[2];
+  fireEvent.change(watchInput, { target: { value: "myVar" } });
+
+  expect(watchInput).toHaveValue("myVar");
 });

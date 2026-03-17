@@ -8,6 +8,7 @@ import axios from "axios";
 const Breakpoint = () => {
   const [breakLine, setBreakLine] = useState("");
   const [breakFunction, setBreakFunction] = useState("");
+  const [watchVariable, setWatchVariable] = useState("");
 
   const handleBreakSave = async (e) => {
     e.preventDefault();
@@ -26,6 +27,30 @@ const Breakpoint = () => {
       toast.success("Added breakpoint", {
         autoClose: 1000,
       });
+    } catch (error) {
+      toast.error("Something went Wrong", {
+        autoClose: 1000,
+      });
+    }
+  };
+
+  const handleWatchpointSave = async (e) => {
+    e.preventDefault();
+    if (!watchVariable) {
+      toast.error("Enter a variable to watch", {
+        autoClose: 1000,
+      });
+      return;
+    }
+    try {
+      await axios.post("http://127.0.0.1:10000/add_watchpoint", {
+        variable: watchVariable,
+        name: "program",
+      });
+      toast.success("Added watchpoint", {
+        autoClose: 1000,
+      });
+      setWatchVariable("");
     } catch (error) {
       toast.error("Something went Wrong", {
         autoClose: 1000,
@@ -58,6 +83,19 @@ const Breakpoint = () => {
         </div>
         <button className="save-button" onClick={handleBreakSave}>
           Add
+        </button>
+      </div>
+      <div className="lower-breakpoint">
+        <div className="line-breakpoint">
+          <a>Watch variable</a>
+          <input
+            type="text"
+            value={watchVariable}
+            onChange={(e) => setWatchVariable(e.target.value)}
+          />
+        </div>
+        <button className="save-button" onClick={handleWatchpointSave}>
+          Add watchpoint
         </button>
       </div>
       <ToastContainer
