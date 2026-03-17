@@ -27,33 +27,58 @@ class TestGDBRoutes(TestCase):
 
 
     def test_compile_code(self):
-        with mock.patch('os.makedirs') as mock_makedirs:
-            with mock.patch.object(self.client, 'post') as mock_post:
-            
-                mock_response = mock.Mock()
-                mock_response.status_code = 200
-                mock_response.json = {'output': 'Compilation successful', 'success': True}
-                mock_post.return_value = mock_response
+        mock_result = mock.Mock()
+        mock_result.returncode = 0
+        mock_result.stdout = ""
+        mock_result.stderr = ""
 
-                output_dir = os.path.join(self.temp_dir.name, 'output')
+        with mock.patch('subprocess.run', return_value=mock_result) as mock_run:
+            payload = {
+                "code": '#include <iostream>\nint main() { std::cout << "Hello"; return 0; }',
+                "name": "test_compile_success",
+            }
+            response = self.client.post(
+                '/compile',
+                data=json.dumps(payload),
+                content_type='application/json'
+            )
 
-                if not os.path.exists(output_dir):
-                    os.makedirs(output_dir)  
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.json['success'])
+            self.assertEqual(response.json['output'], 'Compilation successful.')
 
-                rel_output_dir = os.path.relpath(output_dir, self.temp_dir.name)
-                rel_output_dir = rel_output_dir.replace("\\", "/")  
+            mock_run.assert_called_once_with(
+                ['g++', 'test_compile_success.cpp', '-o', 'output/test_compile_success.exe'],
+                capture_output=True,
+                text=True
+            )
 
-                payload = {
-                    "code": '#include <iostream>\nint main() { std::cout << "Hello, Universe!"; return 0; }',
-                    "name": f"test_program2",  
-                }
+        if os.path.exists('test_compile_success.cpp'):
+            os.remove('test_compile_success.cpp')
 
-                response = self.client.post('/compile', data=json.dumps(payload), content_type='application/json')
-                
-                self.assertEqual(response.status_code, 200)
-                self.assertTrue(response.json['success'])
+    def test_compile_code_failure(self):
+        mock_result = mock.Mock()
+        mock_result.returncode = 1
+        mock_result.stdout = ""
+        mock_result.stderr = "error: expected ';' after expression"
 
-                mock_makedirs.assert_called_with(output_dir)
+        with mock.patch('subprocess.run', return_value=mock_result):
+            payload = {
+                "code": "int main() { return 0 }",
+                "name": "test_compile_fail",
+            }
+            response = self.client.post(
+                '/compile',
+                data=json.dumps(payload),
+                content_type='application/json'
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertFalse(response.json['success'])
+            self.assertIn("expected ';'", response.json['output'])
+
+        if os.path.exists('test_compile_fail.cpp'):
+            os.remove('test_compile_fail.cpp')
 
         
     def test_gdb_command(self):
