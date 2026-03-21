@@ -1,12 +1,16 @@
 from flask import Flask, request, jsonify
 from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 import subprocess
 import os
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+
+OUTPUT_DIR = 'output'
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 gdb_controller = None
 program_name = None
@@ -32,7 +36,7 @@ def start_gdb_session(program):
         raise RuntimeError(f"Failed to initialize GDB controller: {e}")
 
     try:
-        response = gdb_controller.write(f"-file-exec-and-symbols {os.path.join('output/', ensure_exe_extension(program_name))}")
+        response = gdb_controller.write(f"-file-exec-and-symbols {os.path.join(OUTPUT_DIR, ensure_exe_extension(program_name))}")
         if response is None:
             raise RuntimeError("No response from GDB controller")
     except Exception as e:
@@ -67,6 +71,7 @@ def gdb_command():
             'error': str(e),
             'code': f"execute_gdb_command('{command}')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -75,18 +80,28 @@ def compile_code():
     global program_name
     data = request.get_json()
     code = data.get('code')
-    name = data.get('name')
+    raw_name = data.get('name', '')
+    name = secure_filename(raw_name)
 
-    with open(f'{name}.cpp', 'w') as file:
-        file.write(code)
+    if not name or name != raw_name:
+        return jsonify({'success': False, 'output': 'Invalid or missing file name.'}), 400
 
-    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
+    cpp_path = os.path.join(OUTPUT_DIR, f'{name}.cpp')
+    exe_path = os.path.join(OUTPUT_DIR, f'{name}.exe')
+
+    with open(cpp_path, 'w') as f:
+        f.write(code)
+
+    result = subprocess.run(
+        ['g++', cpp_path, '-o', exe_path],
+        capture_output=True, text=True
+    )
 
     if result.returncode == 0:
         program_name = None
         return jsonify({'success': True, 'output': 'Compilation successful.'})
     else:
-        return jsonify({'success': False, 'output': result.stderr})
+        return jsonify({'success': False, 'output': result.stderr}), 400
 
 @app.route('/upload_file', methods=['POST'])    
 def upload_file():
@@ -94,12 +109,12 @@ def upload_file():
         return jsonify({'success': False, 'error': 'No file or name provided'}), 400
 
     file = request.files['file']
-    name = request.form['name']
+    name = secure_filename(request.form['name'])
 
-    if file.filename == '':
+    if not name or file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file'}), 400
 
-    file_path = os.path.join('output/', ensure_exe_extension(name))
+    file_path = os.path.join(OUTPUT_DIR, ensure_exe_extension(name))
     file.save(file_path)
 
     return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})
@@ -127,6 +142,7 @@ def set_breakpoint():
             'error': str(e),
             'code': f"execute_gdb_command('break {location}')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -151,6 +167,7 @@ def info_breakpoints():
             'error': str(e),
             'code': "execute_gdb_command('info breakpoints')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -175,6 +192,7 @@ def stack_trace():
             'error': str(e),
             'code': "execute_gdb_command('bt')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -199,6 +217,7 @@ def threads():
             'error': str(e),
             'code': "execute_gdb_command('info threads')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -223,6 +242,7 @@ def get_registers():
             'error': str(e),
             'code': "execute_gdb_command('info registers')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -247,6 +267,7 @@ def get_locals():
             'error': str(e),
             'code': "execute_gdb_command('info locals')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -271,6 +292,7 @@ def run_program():
             'error': str(e),
             'code': "execute_gdb_command('run')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -295,6 +317,7 @@ def memory_map():
             'error': str(e),
             'code': "execute_gdb_command('info proc mappings')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -319,6 +342,7 @@ def continue_execution():
             'error': str(e),
             'code': "execute_gdb_command('continue')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -343,6 +367,7 @@ def step_over():
             'error': str(e),
             'code': "execute_gdb_command('next')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -367,6 +392,7 @@ def step_into():
             'error': str(e),
             'code': "execute_gdb_command('step')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -391,6 +417,7 @@ def step_out():
             'error': str(e),
             'code': "execute_gdb_command('finish')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -416,6 +443,7 @@ def add_watchpoint():
             'error': str(e),
             'code': f"execute_gdb_command('watch {variable}')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
@@ -441,6 +469,7 @@ def delete_breakpoint():
             'error': str(e),
             'code': f"execute_gdb_command('delete {breakpoint_number}')"
         }
+        return jsonify(response), 500
     
     return jsonify(response)
 
