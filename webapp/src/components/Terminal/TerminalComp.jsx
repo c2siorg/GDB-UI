@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ReactTerminal } from "react-terminal";
-import axios from "axios";
+import api from '../../services/api';
 import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
 
@@ -13,7 +13,7 @@ const TerminalComp = () => {
     const fullCommand = [command, ...args].join(" ");
     console.log("Full Command:", fullCommand);
     try {
-      const { data } = await axios.post("http://127.0.0.1:10000/gdb_command", {
+      const { data } = await api.post("/gdb_command", {
         command: fullCommand,
         name: "program",
       });
