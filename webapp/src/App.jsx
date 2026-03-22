@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import Debug from "./pages/Debug/Debug";
 import Threads from "./components/GdbComponents/Threads/Threads";
 import LocalVariable from "./components/GdbComponents/LocalVariable/LocalVariable";
@@ -30,14 +30,16 @@ const App = () => {
       />
 
       <Routes>
-        <Route path="debug" element={<Debug />}>
+        <Route path="/debug" element={<Debug />}>
           <Route path="threads" element={<Threads />} />
           <Route path="localVariable" element={<LocalVariable />} />
           <Route path="context" element={<Context />} />
           <Route path="memoryMap" element={<MemoryMap />} />
           <Route path="breakPoints" element={<BreakPoints />} />
         </Route>
-        {/* You can add more routes here */}
+        <Route path="/login" element={<Navigate to="/debug" replace />} />
+        <Route path="/" element={<Navigate to="/debug" replace />} />
+        <Route path="*" element={<Navigate to="/debug" replace />} />
       </Routes>
       <Footer />
     </div>
