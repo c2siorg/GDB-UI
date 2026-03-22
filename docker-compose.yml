@@ -1,24 +1,27 @@
-version: "3"
 services:
   gdbui_server:
     build:
-      dockerfile: DockerFile.dev
       context: ./gdbui_server
-    volumes:
-      - ./gdbui_server:/app
+      dockerfile: Dockerfile
     ports:
       - "10000:10000"
-    expose:
-      - 10000
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   webapp:
     build:
-      dockerfile: DockerFile.dev
       context: ./webapp
-    volumes:
-      - /app/node_modules
-      - ./webapp:/app
+      dockerfile: DockerFile.dev
+      args:
+        - VITE_API_BASE_URL=http://gdbui_server:10000
     ports:
       - "5173:5173"
-    expose:
-      - 5173
+    restart: always
+    depends_on:
+      gdbui_server:
+        condition: service_healthy

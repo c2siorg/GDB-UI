@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('gdbui_server/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+          
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdb g++
+          
+      - name: Install Python dependencies
+        run: |
+          cd gdbui_server
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+          
+      - name: Run backend tests with coverage
+        run: |
+          cd gdbui_server
+          python -m pytest flask_test.py -v --cov=main --cov-report=term-missing --cov-fail-under=50
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: webapp/package-lock.json
+          
+      - name: Install frontend dependencies
+        run: |
+          cd webapp
+          npm ci
+          
+      - name: Build frontend
+        run: |
+          cd webapp
+          npm run build
+        env:
+          VITE_API_BASE_URL: http://127.0.0.1:10000
