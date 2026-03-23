@@ -29,12 +29,10 @@ const BreakPoints = () => {
     const data = await axios.post("http://127.0.0.1:10000/info_breakpoints", {
       name: "program",
     });
-    console.log(data.data["result"]);
     setInfoBreakpointData(data.data["result"]);
   };
   useEffect(() => {
     if (refresh) {
-      console.log("click from breakpoint in GdbComponents");
       fetchInfoBreakpoints();
     }
   }, [refresh]);
