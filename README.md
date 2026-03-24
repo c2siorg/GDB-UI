@@ -72,6 +72,33 @@ If you prefer a manual setup or are unable to use Docker, follow these steps:
     python main.py
     ```
 
+## Environment Variables
+
+Both services are configured via `.env` files. Before running locally, copy the example files and adjust any values you need to change:
+
+```sh
+cp webapp/.env.example webapp/.env
+cp gdbui_server/.env.example gdbui_server/.env
+```
+
+**`webapp/.env`**
+
+| Variable | Default | Description |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://127.0.0.1:10000` | URL of the backend server |
+
+**`gdbui_server/.env`**
+
+| Variable | Default | Description |
+|---|---|---|
+| `FLASK_HOST` | `0.0.0.0` | Host the Flask server binds to |
+| `FLASK_PORT` | `10000` | Port the Flask server listens on |
+| `FLASK_DEBUG` | `0` | Set to `1` to enable Flask debug mode |
+| `CORS_ORIGINS` | `*` | Comma-separated list of allowed CORS origins |
+| `OUTPUT_DIR` | `output/` | Directory for compiled and uploaded binaries |
+
+The `.env` files are git-ignored and never committed. The `.env.example` files are the source of truth for what each service expects.
+
 ## Running Tests
 
 ### Frontend Tests (Vite)
