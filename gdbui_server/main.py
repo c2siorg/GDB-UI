@@ -5,11 +5,12 @@ import subprocess
 import os
 
 app = Flask(__name__)
-cors = CORS(app)
+cors = CORS(app, origins=os.environ.get('CORS_ORIGINS', '*'))
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 gdb_controller = None
 program_name = None
+output_dir = os.environ.get('OUTPUT_DIR', 'output/')
 
 def execute_gdb_command(command):
     response2 = gdb_controller.write(command)
@@ -32,7 +33,7 @@ def start_gdb_session(program):
         raise RuntimeError(f"Failed to initialize GDB controller: {e}")
 
     try:
-        response = gdb_controller.write(f"-file-exec-and-symbols {os.path.join('output/', ensure_exe_extension(program_name))}")
+        response = gdb_controller.write(f"-file-exec-and-symbols {os.path.join(output_dir, ensure_exe_extension(program_name))}")
         if response is None:
             raise RuntimeError("No response from GDB controller")
     except Exception as e:
@@ -80,7 +81,7 @@ def compile_code():
     with open(f'{name}.cpp', 'w') as file:
         file.write(code)
 
-    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'output/{name}.exe'], capture_output=True, text=True)
+    result = subprocess.run(['g++', f'{name}.cpp', '-o', f'{output_dir}{name}.exe'], capture_output=True, text=True)
 
     if result.returncode == 0:
         program_name = None
@@ -99,7 +100,7 @@ def upload_file():
     if file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file'}), 400
 
-    file_path = os.path.join('output/', ensure_exe_extension(name))
+    file_path = os.path.join(output_dir, ensure_exe_extension(name))
     file.save(file_path)
 
     return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})
@@ -446,4 +447,8 @@ def delete_breakpoint():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    app.run(
+        host=os.environ.get('FLASK_HOST', '0.0.0.0'),
+        port=int(os.environ.get('FLASK_PORT', 10000)),
+        debug=os.environ.get('FLASK_DEBUG', '0') == '1',
+    )
