@@ -10,6 +10,12 @@ services:
       - "10000:10000"
     expose:
       - 10000
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:10000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   webapp:
     build:
@@ -22,3 +28,6 @@ services:
       - "5173:5173"
     expose:
       - 5173
+    depends_on:
+      gdbui_server:
+        condition: service_healthy
