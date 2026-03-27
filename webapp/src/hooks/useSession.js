@@ -1,29 +1,49 @@
 import { useEffect } from "react";
 import { DataState } from "../context/DataContext";
 
+const POLL_INTERVAL = 5000;
+
 const useSession = () => {
-  const { setSessionId, setConnectionStatus } = DataState();
+  const { sessionId, setSessionId, setConnectionStatus } = DataState();
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:10000";
 
   useEffect(() => {
-    // Generate UUID if it doesn't exist
-    const generateId = () => {
-      return (
-        crypto.randomUUID?.() ||
-        Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15)
-      );
-    };
-    setSessionId(prev => prev ?? generateId());
+    if (sessionId) {
+      return;
+    }
 
+    const createSession = async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/create_session`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok) {
+          throw new Error("Failed to create session");
+        }
+        const data = await response.json();
+        setSessionId(data?.session_id ?? null);
+      } catch {
+        setSessionId(null);
+      }
+    };
+
+    createSession();
+  }, [apiBaseUrl, sessionId, setSessionId]);
+
+  useEffect(() => {
     const checkConnection = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:10000/health");
+        const response = await fetch(`${apiBaseUrl}/health`);
         if (response.ok) {
           setConnectionStatus("Connected");
         } else {
           setConnectionStatus("Disconnected");
         }
-      } catch (error) {
+      } catch {
         setConnectionStatus("Disconnected");
       }
     };
@@ -34,10 +54,10 @@ const useSession = () => {
     // Re-check every 5 seconds
     const interval = setInterval(() => {
       checkConnection();
-    }, 5000);
+    }, POLL_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [setSessionId, setConnectionStatus]);
+  }, [apiBaseUrl, setConnectionStatus]);
 };
 
 export default useSession;
