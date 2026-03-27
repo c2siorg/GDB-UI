@@ -3,6 +3,7 @@ from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
 import subprocess
 import os
+import uuid
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -225,6 +226,19 @@ def get_registers():
         }
     
     return jsonify(response)
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({
+        'success': True,
+        'status': 'alive'
+    })
+
+@app.route('/create_session', methods=['POST'])
+def create_session():
+    return jsonify({
+        'session_id': str(uuid.uuid4())
+    })
 
 @app.route('/get_locals', methods=['POST'])
 def get_locals():

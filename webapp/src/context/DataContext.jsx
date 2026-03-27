@@ -18,6 +18,8 @@ export const DataProvider = ({ children }) => {
   const [memoryMap, setMemoryMap] = useState("");
   const [terminalOutput, setTerminalOutput] = useState("");
   const [commandPress, setCommandPress] = useState(true);
+  const [sessionId, setSessionId] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("Disconnected");
 
   const fetchData = useCallback(async () => {
     if (refresh) {
@@ -59,6 +61,10 @@ export const DataProvider = ({ children }) => {
         setCommandPress,
         commandPress,
         setTerminalOutput,
+        sessionId,
+        setSessionId,
+        connectionStatus,
+        setConnectionStatus,
       }}
     >
       {children}

@@ -9,9 +9,11 @@ import BreakPoints from "./components/GdbComponents/BreakPoints/BreakPoints";
 import Footer from "./components/Footer/Footer";
 import Header from "./components/Header/Header";
 import { DataState } from "./context/DataContext";
+import useSession from "./hooks/useSession";
 
 const App = () => {
   const { setDark, dark, isDarkMode, setDarkMode } = DataState();
+  useSession();
 
   const toggleDarkMode = () => {
     setDarkMode((isDarkMode) => (isDarkMode === "dark" ? "light" : "dark"));

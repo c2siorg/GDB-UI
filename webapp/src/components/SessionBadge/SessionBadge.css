@@ -1,0 +1,41 @@
+.session-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--header-bg, #2a2a2a);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-color, #fff);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-right: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-connected {
+  background-color: #4caf50;
+  box-shadow: 0 0 5px #4caf50;
+}
+
+.status-connecting {
+  background-color: #ffc107;
+  box-shadow: 0 0 5px #ffc107;
+}
+
+.status-disconnected {
+  background-color: #f44336;
+  box-shadow: 0 0 5px #f44336;
+}
+
+.session-id {
+  opacity: 0.8;
+  font-family: monospace;
+  margin-left: 4px;
+}
