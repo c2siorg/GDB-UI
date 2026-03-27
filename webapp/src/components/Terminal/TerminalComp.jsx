@@ -11,7 +11,6 @@ const TerminalComp = () => {
 
   const handleCommand = async (command, ...args) => {
     const fullCommand = [command, ...args].join(" ");
-    console.log("Full Command:", fullCommand);
     try {
       const { data } = await axios.post("http://127.0.0.1:10000/gdb_command", {
         command: fullCommand,
@@ -30,9 +29,7 @@ const TerminalComp = () => {
   };
 
   useEffect(() => {
-    console.log(terminalOutput);
     if (terminalOutput) {
-      console.log(terminalOutput);
       defaultHandler(terminalOutput);
     }
   }, [commandPress]);

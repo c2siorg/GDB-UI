@@ -22,7 +22,6 @@ const DebugHeader = () => {
   } = DataState();
 
   const handleRun = (command) => {
-    console.log("clicked");
     setCommandPress(!commandPress);
     setTerminalOutput(command);
   };
