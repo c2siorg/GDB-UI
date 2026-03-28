@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify
-from pygdbmi.gdbcontroller import GdbController
-from flask_cors import CORS
-import subprocess
 import os
+import re
+import subprocess
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from pygdbmi.gdbcontroller import GdbController
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -22,6 +24,12 @@ def execute_gdb_command(command):
 
 def ensure_exe_extension(name):
     return name if name.endswith('.exe') else name + '.exe'
+
+def validate_name(name):
+    """Validate that name contains only safe characters (alphanumeric, underscore, hyphen)."""
+    if not name or not re.match(r'^[a-zA-Z0-9_-]+$', name):
+        return None
+    return name
 
 def start_gdb_session(program):
     global gdb_controller, program_name
@@ -75,7 +83,10 @@ def compile_code():
     global program_name
     data = request.get_json()
     code = data.get('code')
-    name = data.get('name')
+    name = validate_name(data.get('name'))
+
+    if name is None:
+        return jsonify({'success': False, 'output': 'Invalid file name.'}), 400
 
     with open(f'{name}.cpp', 'w') as file:
         file.write(code)
@@ -94,7 +105,10 @@ def upload_file():
         return jsonify({'success': False, 'error': 'No file or name provided'}), 400
 
     file = request.files['file']
-    name = request.form['name']
+    name = validate_name(request.form['name'])
+
+    if name is None:
+        return jsonify({'success': False, 'error': 'Invalid file name.'}), 400
 
     if file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file'}), 400
