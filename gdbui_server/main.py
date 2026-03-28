@@ -49,8 +49,21 @@ def start_gdb_session(program):
 def gdb_command():
     global program_name
     data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': 'Request body must be valid JSON'}), 400
+
     command = data.get('command')
     file = data.get('name')
+
+    if not command or not isinstance(command, str) or not command.strip():
+        return jsonify({'success': False, 'error': 'Missing or invalid command field'}), 400
+
+    if not file or not isinstance(file, str) or not file.strip():
+        return jsonify({'success': False, 'error': 'Missing or invalid name field'}), 400
+
+    command = command.strip()
+    file = file.strip()
+
     if program_name != file:
         start_gdb_session(f'{file}')
 
