@@ -21,7 +21,8 @@ The quickest way to get started with GDB-UI is by using Docker. A `docker-compos
     docker-compose up
     ```
 
-This command will build and start both the frontend and backend services, making the application available at [http://localhost:3000](http://localhost:3000) (or your specified port).
+This command will build and start both the frontend and backend services, making the application available at [http://localhost:5173](http://localhost:5173) (or your specified port).
+backend API runs on (http://localhost:10000)
 
 ### Manual Setup
 
