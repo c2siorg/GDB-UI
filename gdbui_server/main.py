@@ -250,6 +250,30 @@ def get_locals():
     
     return jsonify(response)
 
+@app.route('/get_functions', methods=['POST'])
+def get_functions():
+    global program_name
+    data = request.get_json()
+    file = data.get('name')
+    if program_name != file:
+        start_gdb_session(f'{file}')
+
+    try:
+        result = execute_gdb_command("info functions")
+        response = {
+            'success': True,
+            'result': result,
+            'code': "execute_gdb_command('info functions')"
+        }
+    except Exception as e:
+        response = {
+            'success': False,
+            'error': str(e),
+            'code': "execute_gdb_command('info functions')"
+        }
+
+    return jsonify(response)
+
 @app.route('/run', methods=['POST'])
 def run_program():
     global program_name
