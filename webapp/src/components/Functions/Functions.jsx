@@ -41,7 +41,6 @@ const Functions = () => {
   return (
     <div className="functions-parent">
       <a className="functions-heading"> Functions</a>
-      offset
       <div className="functions">
         {functions}
         {data.map((obj) => {
