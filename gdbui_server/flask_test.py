@@ -120,6 +120,14 @@ class TestGDBRoutes(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json['success'])
 
+    def test_get_functions(self):
+        get_functions_payload = {
+            "name": f"{self.temp_dir.name}/test_program"
+        }
+        response = self.client.post('/get_functions', data=json.dumps(get_functions_payload), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json['success'])
+
     def test_run_program(self):
         run_payload = {
             "name": f"{self.temp_dir.name}/test_program"
