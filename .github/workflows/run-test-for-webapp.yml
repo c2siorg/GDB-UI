@@ -30,6 +30,11 @@ jobs:
           cd webapp
           npm install
 
+      - name: Run npm lint checks
+        run: |
+          cd webapp
+          npm run lint:a11y
+
       - name: Run npm tests with coverage
         run: |
           cd webapp

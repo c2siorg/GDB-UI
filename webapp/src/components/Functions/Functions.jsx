@@ -40,14 +40,13 @@ const Functions = () => {
 
   return (
     <div className="functions-parent">
-      <a className="functions-heading"> Functions</a>
+      <div className="functions-heading">Functions</div>
       offset
       <div className="functions">
         {functions}
-        {data.map((obj) => {
-          return <a>{obj}</a>;
+        {data.map((obj, index) => {
+          return <div className="functions-item" key={`${obj}-${index}`}>{obj}</div>;
         })}
-        {/* <a>sub.KERNEL32.dll_DeleteCritical_231</a> */}
       </div>
     </div>
   );
