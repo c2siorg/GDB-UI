@@ -1,251 +1,146 @@
-import unittest
 import json
-import tempfile
-from flask import Flask
-from flask_testing import TestCase
-from unittest import mock
+import unittest
 from io import BytesIO
+from unittest import mock
+
+from flask_testing import TestCase
+
 from main import app
-import os
+
 
 class TestGDBRoutes(TestCase):
     def create_app(self):
-        app.config['TESTING'] = True
+        app.config["TESTING"] = True
         return app
 
-    def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
-
-        compile_payload = {
-            "code": "#include <iostream>\nint main() { std::cout << 'Hello, World!'; return 0; }",
-            "name": f"{self.temp_dir.name}/test_program",
-        }
-        self.client.post('/compile', data=json.dumps(compile_payload), content_type='application/json')
-
-    def tearDown(self):
-        self.temp_dir.cleanup()
-
-
-    def test_compile_code(self):
-        with mock.patch('os.makedirs') as mock_makedirs:
-            with mock.patch.object(self.client, 'post') as mock_post:
-            
-                mock_response = mock.Mock()
-                mock_response.status_code = 200
-                mock_response.json = {'output': 'Compilation successful', 'success': True}
-                mock_post.return_value = mock_response
-
-                output_dir = os.path.join(self.temp_dir.name, 'output')
-
-                if not os.path.exists(output_dir):
-                    os.makedirs(output_dir)  
-
-                rel_output_dir = os.path.relpath(output_dir, self.temp_dir.name)
-                rel_output_dir = rel_output_dir.replace("\\", "/")  
-
-                payload = {
-                    "code": '#include <iostream>\nint main() { std::cout << "Hello, Universe!"; return 0; }',
-                    "name": f"test_program2",  
-                }
-
-                response = self.client.post('/compile', data=json.dumps(payload), content_type='application/json')
-                
-                self.assertEqual(response.status_code, 200)
-                self.assertTrue(response.json['success'])
-
-                mock_makedirs.assert_called_with(output_dir)
-
-        
-    def test_gdb_command(self):
-        gdb_payload = {
-            "command": "info locals",
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/gdb_command', data=json.dumps(gdb_payload), content_type='application/json')
+    def assert_success_response(self, response):
+        body = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+        self.assertTrue(body["success"])
+        self.assertIn("data", body)
+        self.assertNotIn("error", body)
+        self.assertNotIn("code", body)
+        self.assertIn("X-Correlation-ID", response.headers)
+        self.assertTrue(response.headers["X-Correlation-ID"])
+        return body
 
-    def test_set_breakpoint(self):
-        breakpoint_payload = {
-            "location": "main",
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/set_breakpoint', data=json.dumps(breakpoint_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+    def assert_error_response(self, response, expected_status):
+        body = json.loads(response.data)
+        self.assertEqual(response.status_code, expected_status)
+        self.assertFalse(body["success"])
+        self.assertIn("error", body)
+        self.assertNotIn("data", body)
+        self.assertNotIn("code", body)
+        self.assertIn("message", body["error"])
+        self.assertIn("trace_id", body["error"])
+        self.assertIn("X-Correlation-ID", response.headers)
+        self.assertEqual(body["error"]["trace_id"], response.headers["X-Correlation-ID"])
+        return body
 
-    def test_info_breakpoints(self):
-        breakpoint_payload = {
-            "location": "main",
-            "name": f"{self.temp_dir.name}/test_program"
+    @mock.patch("main.subprocess.run")
+    def test_compile_code(self, mock_run):
+        mock_run.return_value = mock.Mock(returncode=0, stderr="")
+        payload = {
+            "code": '#include <iostream>\nint main() { std::cout << "Hello"; return 0; }',
+            "name": "test_program",
         }
-        self.client.post('/set_breakpoint', data=json.dumps(breakpoint_payload), content_type='application/json')
 
-        info_payload = {
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/info_breakpoints', data=json.dumps(info_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+        response = self.client.post("/compile", data=json.dumps(payload), content_type="application/json")
+        body = self.assert_success_response(response)
+        self.assertEqual(body["data"]["output"], "Compilation successful.")
 
-    def test_stack_trace(self):
-        stack_trace_payload = {
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/stack_trace', data=json.dumps(stack_trace_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+    @mock.patch("main.subprocess.run")
+    def test_compile_code_failure(self, mock_run):
+        mock_run.return_value = mock.Mock(returncode=1, stderr="compile error")
+        payload = {"code": "int main(){", "name": "bad_program"}
 
-    def test_threads(self):
-        threads_payload = {
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/threads', data=json.dumps(threads_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+        response = self.client.post("/compile", data=json.dumps(payload), content_type="application/json")
+        body = self.assert_error_response(response, 400)
+        self.assertIn("compile error", body["error"]["message"])
 
-    def test_get_registers(self):
-        get_registers_payload = {
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/get_registers', data=json.dumps(get_registers_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+    @mock.patch("main.start_gdb_session")
+    @mock.patch("main.execute_gdb_command")
+    def test_gdb_routes_success_schema(self, mock_execute, mock_start):
+        mock_execute.return_value = "ok"
+        mock_start.return_value = None
 
-    def test_get_locals(self):
-        get_locals_payload = {
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/get_locals', data=json.dumps(get_locals_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+        route_payloads = [
+            ("/gdb_command", {"command": "info locals", "name": "program"}),
+            ("/set_breakpoint", {"location": "main", "name": "program"}),
+            ("/info_breakpoints", {"name": "program"}),
+            ("/stack_trace", {"name": "program"}),
+            ("/threads", {"name": "program"}),
+            ("/get_registers", {"name": "program"}),
+            ("/get_locals", {"name": "program"}),
+            ("/run", {"name": "program"}),
+            ("/memory_map", {"name": "program"}),
+            ("/continue", {"name": "program"}),
+            ("/step_over", {"name": "program"}),
+            ("/step_into", {"name": "program"}),
+            ("/step_out", {"name": "program"}),
+            ("/add_watchpoint", {"variable": "var", "name": "program"}),
+            ("/delete_breakpoint", {"breakpoint_number": 1, "name": "program"}),
+        ]
 
-    def test_run_program(self):
-        run_payload = {
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/run', data=json.dumps(run_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+        for route, payload in route_payloads:
+            with self.subTest(route=route):
+                response = self.client.post(route, data=json.dumps(payload), content_type="application/json")
+                body = self.assert_success_response(response)
+                self.assertIn("result", body["data"])
 
-    def test_memory_map(self):
-        memory_map_payload = {
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/memory_map', data=json.dumps(memory_map_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+    @mock.patch("main.start_gdb_session")
+    @mock.patch("main.execute_gdb_command")
+    def test_gdb_route_error_schema(self, mock_execute, mock_start):
+        mock_execute.side_effect = RuntimeError("gdb boom")
+        mock_start.return_value = None
 
-    def test_continue_execution(self):
-        continue_payload = {
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/continue', data=json.dumps(continue_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+        response = self.client.post(
+            "/gdb_command",
+            data=json.dumps({"command": "info locals", "name": "program"}),
+            content_type="application/json",
+        )
 
-    def test_step_over(self):
-        step_over_payload = {
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/step_over', data=json.dumps(step_over_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
+        body = self.assert_error_response(response, 500)
+        self.assertIn("gdb boom", body["error"]["message"])
 
-    def test_step_into(self):
-        step_into_payload = {
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/step_into', data=json.dumps(step_into_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
-
-    def test_step_out(self):
-        step_out_payload = {
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/step_out', data=json.dumps(step_out_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
-
-    def test_add_watchpoint(self):
-        add_watchpoint_payload = {
-            "variable": "var",
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/add_watchpoint', data=json.dumps(add_watchpoint_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
-
-    def test_delete_breakpoint(self):
-        set_breakpoint_payload = {
-            "location": "main",
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        self.client.post('/set_breakpoint', data=json.dumps(set_breakpoint_payload), content_type='application/json')
-
-        delete_breakpoint_payload = {
-            "breakpoint_number": 1,
-            "name": f"{self.temp_dir.name}/test_program"
-        }
-        response = self.client.post('/delete_breakpoint', data=json.dumps(delete_breakpoint_payload), content_type='application/json')
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json['success'])
-        
-    @mock.patch('werkzeug.datastructures.FileStorage.save')
+    @mock.patch("werkzeug.datastructures.FileStorage.save")
     def test_upload_file(self, mock_save):
         data = {
-            'file': (BytesIO(b"dummy file content"), 'test_program'),
-            'name': 'test_program'
+            "file": (BytesIO(b"dummy file content"), "test_program"),
+            "name": "test_program",
         }
 
-        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
-        
-        response_data = json.loads(response.data)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response_data['success'])
-        self.assertIn('File uploaded successfully', response_data['message'])
-
+        response = self.client.post("/upload_file", content_type="multipart/form-data", data=data)
+        body = self.assert_success_response(response)
+        self.assertEqual(body["data"]["message"], "File uploaded successfully")
+        self.assertEqual(body["data"]["file_path"], "output/test_program.exe")
         mock_save.assert_called_once()
 
-        expected_path = 'output/test_program.exe'
-        self.assertEqual(response_data['file_path'], expected_path)
+    def test_upload_file_no_file(self):
+        response = self.client.post(
+            "/upload_file", content_type="multipart/form-data", data={"name": "test_program"}
+        )
+        body = self.assert_error_response(response, 400)
+        self.assertIn("No file or name provided", body["error"]["message"])
 
-    @mock.patch('werkzeug.datastructures.FileStorage.save')
-    def test_upload_file_no_file(self, mock_save):
-        
-        data = {'name': 'test_program'}
-        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
-        
-        response_data = json.loads(response.data)
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response_data['success'])
-        self.assertIn('No file or name provided', response_data['error'])
+    def test_upload_file_no_name(self):
+        response = self.client.post(
+            "/upload_file",
+            content_type="multipart/form-data",
+            data={"file": (BytesIO(b"dummy file content"), "test_program")},
+        )
+        body = self.assert_error_response(response, 400)
+        self.assertIn("No file or name provided", body["error"]["message"])
 
-    @mock.patch('werkzeug.datastructures.FileStorage.save')
-    def test_upload_file_no_name(self, mock_save):
-        
-        data = {'file': (BytesIO(b"dummy file content"), 'test_program')}
-        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
-        
-        response_data = json.loads(response.data)
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response_data['success'])
-        self.assertIn('No file or name provided', response_data['error'])
+    def test_upload_file_empty_filename(self):
+        response = self.client.post(
+            "/upload_file",
+            content_type="multipart/form-data",
+            data={"file": (BytesIO(b"dummy file content"), ""), "name": "test_program"},
+        )
+        body = self.assert_error_response(response, 400)
+        self.assertIn("No selected file", body["error"]["message"])
 
-    @mock.patch('werkzeug.datastructures.FileStorage.save')
-    def test_upload_file_empty_filename(self, mock_save):
-        
-        data = {
-            'file': (BytesIO(b"dummy file content"), ''),
-            'name': 'test_program'
-        }
-        response = self.client.post('/upload_file', content_type='multipart/form-data', data=data)
-        
-        response_data = json.loads(response.data)
-        self.assertEqual(response.status_code, 400)
-        self.assertFalse(response_data['success'])
-        self.assertIn('No selected file', response_data['error'])
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

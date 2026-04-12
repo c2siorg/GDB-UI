@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from pygdbmi.gdbcontroller import GdbController
 from flask_cors import CORS
 import subprocess
 import os
+import uuid
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -10,6 +11,25 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 gdb_controller = None
 program_name = None
+
+
+@app.before_request
+def assign_trace_id():
+    g.trace_id = str(uuid.uuid4())
+
+
+def json_response(payload, status_code=200):
+    response = jsonify(payload)
+    response.headers['X-Correlation-ID'] = g.trace_id
+    return response, status_code
+
+
+def success_response(data):
+    return json_response({'success': True, 'data': data})
+
+
+def error_response(message, status_code=500):
+    return json_response({'success': False, 'error': {'message': str(message), 'trace_id': g.trace_id}}, status_code)
 
 def execute_gdb_command(command):
     response2 = gdb_controller.write(command)
@@ -56,19 +76,9 @@ def gdb_command():
 
     try:
         result = execute_gdb_command(command)
-        response = {
-            'success': True,
-            'result': result,
-            'code': f"execute_gdb_command('{command}')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('{command}')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/compile', methods=['POST'])
 def compile_code():
@@ -84,25 +94,25 @@ def compile_code():
 
     if result.returncode == 0:
         program_name = None
-        return jsonify({'success': True, 'output': 'Compilation successful.'})
+        return success_response({'output': 'Compilation successful.'})
     else:
-        return jsonify({'success': False, 'output': result.stderr})
+        return error_response(result.stderr, status_code=400)
 
 @app.route('/upload_file', methods=['POST'])    
 def upload_file():
     if 'file' not in request.files or 'name' not in request.form:
-        return jsonify({'success': False, 'error': 'No file or name provided'}), 400
+        return error_response('No file or name provided', status_code=400)
 
     file = request.files['file']
     name = request.form['name']
 
     if file.filename == '':
-        return jsonify({'success': False, 'error': 'No selected file'}), 400
+        return error_response('No selected file', status_code=400)
 
     file_path = os.path.join('output/', ensure_exe_extension(name))
     file.save(file_path)
 
-    return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})
+    return success_response({'message': 'File uploaded successfully', 'file_path': file_path})
 
 
 @app.route('/set_breakpoint', methods=['POST'])
@@ -116,19 +126,9 @@ def set_breakpoint():
 
     try:
         result = execute_gdb_command(f"break {location}")
-        response = {
-            'success': True,
-            'result': result,
-            'code': f"execute_gdb_command('break {location}')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('break {location}')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/info_breakpoints', methods=['POST'])
 def info_breakpoints():
@@ -140,19 +140,9 @@ def info_breakpoints():
 
     try:
         result = execute_gdb_command("info breakpoints")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info breakpoints')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info breakpoints')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/stack_trace', methods=['POST'])
 def stack_trace():
@@ -164,19 +154,9 @@ def stack_trace():
 
     try:
         result = execute_gdb_command("bt")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('bt')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('bt')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/threads', methods=['POST'])
 def threads():
@@ -188,19 +168,9 @@ def threads():
 
     try:
         result = execute_gdb_command("info threads")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info threads')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info threads')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/get_registers', methods=['POST'])
 def get_registers():
@@ -212,19 +182,9 @@ def get_registers():
 
     try:
         result = execute_gdb_command("info registers")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info registers')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info registers')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/get_locals', methods=['POST'])
 def get_locals():
@@ -236,19 +196,9 @@ def get_locals():
 
     try:
         result = execute_gdb_command("info locals")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info locals')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info locals')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/run', methods=['POST'])
 def run_program():
@@ -260,19 +210,9 @@ def run_program():
 
     try:
         result = execute_gdb_command("run")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('run')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('run')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/memory_map', methods=['POST'])
 def memory_map():
@@ -284,19 +224,9 @@ def memory_map():
 
     try:
         result = execute_gdb_command("info proc mappings")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info proc mappings')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info proc mappings')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/continue', methods=['POST'])
 def continue_execution():
@@ -308,19 +238,9 @@ def continue_execution():
 
     try:
         result = execute_gdb_command("continue")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('continue')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('continue')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/step_over', methods=['POST'])
 def step_over():
@@ -332,19 +252,9 @@ def step_over():
 
     try:
         result = execute_gdb_command("next")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('next')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('next')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/step_into', methods=['POST'])
 def step_into():
@@ -356,19 +266,9 @@ def step_into():
 
     try:
         result = execute_gdb_command("step")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('step')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('step')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/step_out', methods=['POST'])
 def step_out():
@@ -380,19 +280,9 @@ def step_out():
 
     try:
         result = execute_gdb_command("finish")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('finish')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('finish')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/add_watchpoint', methods=['POST'])
 def add_watchpoint():
@@ -405,19 +295,9 @@ def add_watchpoint():
 
     try:
         result = execute_gdb_command(f"watch {variable}")
-        response = {
-            'success': True,
-            'result': result,
-            'code': f"execute_gdb_command('watch {variable}')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('watch {variable}')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 @app.route('/delete_breakpoint', methods=['POST'])
 def delete_breakpoint():
@@ -430,19 +310,9 @@ def delete_breakpoint():
 
     try:
         result = execute_gdb_command(f"delete {breakpoint_number}")
-        response = {
-            'success': True,
-            'result': result,
-            'code': f"execute_gdb_command('delete {breakpoint_number}')"
-        }
+        return success_response({'result': result})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('delete {breakpoint_number}')"
-        }
-    
-    return jsonify(response)
+        return error_response(e)
 
 
 if __name__ == '__main__':
