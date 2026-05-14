@@ -38,6 +38,12 @@ class TestGDBRoutes(TestCase):
         self.assertEqual(body["error"]["trace_id"], response.headers["X-Correlation-ID"])
         return body
 
+    def assert_v2_invalid_request(self, response, expected_message):
+        body = self.assert_v2_error_response(response, 400)
+        self.assertEqual(body["error"]["code"], "INVALID_REQUEST")
+        self.assertEqual(body["error"]["message"], expected_message)
+        return body
+
     def assert_legacy_success_response(self, response):
         body = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
@@ -87,6 +93,24 @@ class TestGDBRoutes(TestCase):
         self.assertNotIn("compile error", json.dumps(body))
 
     @mock.patch("main.subprocess.run")
+    def test_v2_compile_rejects_missing_payload(self, mock_run):
+        response = self.client.post("/v2/compile", content_type="application/json")
+
+        self.assert_v2_invalid_request(response, "Missing required fields: code, name.")
+        mock_run.assert_not_called()
+
+    @mock.patch("main.subprocess.run")
+    def test_v2_compile_rejects_blank_required_fields(self, mock_run):
+        response = self.client.post(
+            "/v2/compile",
+            data=json.dumps({"code": " ", "name": ""}),
+            content_type="application/json",
+        )
+
+        self.assert_v2_invalid_request(response, "Missing required fields: code, name.")
+        mock_run.assert_not_called()
+
+    @mock.patch("main.subprocess.run")
     def test_legacy_compile_schema(self, mock_run):
         mock_run.return_value = mock.Mock(returncode=0, stderr="")
         payload = {
@@ -128,6 +152,43 @@ class TestGDBRoutes(TestCase):
                 response = self.client.post(f"/v2{route}", data=json.dumps(payload), content_type="application/json")
                 body = self.assert_v2_success_response(response)
                 self.assertIn("result", body["data"])
+
+    @mock.patch("main.start_gdb_session")
+    @mock.patch("main.execute_gdb_command")
+    def test_v2_gdb_command_rejects_missing_payload(self, mock_execute, mock_start):
+        response = self.client.post("/v2/gdb_command", content_type="application/json")
+
+        self.assert_v2_invalid_request(response, "Missing required fields: command, name.")
+        mock_start.assert_not_called()
+        mock_execute.assert_not_called()
+
+    @mock.patch("main.start_gdb_session")
+    @mock.patch("main.execute_gdb_command")
+    def test_v2_gdb_routes_reject_missing_required_fields(self, mock_execute, mock_start):
+        route_payloads = [
+            ("/v2/set_breakpoint", {"name": "program"}, "Missing required fields: location."),
+            ("/v2/info_breakpoints", {}, "Missing required fields: name."),
+            ("/v2/stack_trace", {}, "Missing required fields: name."),
+            ("/v2/threads", {}, "Missing required fields: name."),
+            ("/v2/get_registers", {}, "Missing required fields: name."),
+            ("/v2/get_locals", {}, "Missing required fields: name."),
+            ("/v2/run", {}, "Missing required fields: name."),
+            ("/v2/memory_map", {}, "Missing required fields: name."),
+            ("/v2/continue", {}, "Missing required fields: name."),
+            ("/v2/step_over", {}, "Missing required fields: name."),
+            ("/v2/step_into", {}, "Missing required fields: name."),
+            ("/v2/step_out", {}, "Missing required fields: name."),
+            ("/v2/add_watchpoint", {"name": "program"}, "Missing required fields: variable."),
+            ("/v2/delete_breakpoint", {"breakpoint_number": 1}, "Missing required fields: name."),
+        ]
+
+        for route, payload, expected_message in route_payloads:
+            with self.subTest(route=route):
+                response = self.client.post(route, data=json.dumps(payload), content_type="application/json")
+                self.assert_v2_invalid_request(response, expected_message)
+
+        mock_start.assert_not_called()
+        mock_execute.assert_not_called()
 
     @mock.patch("main.start_gdb_session")
     @mock.patch("main.execute_gdb_command")

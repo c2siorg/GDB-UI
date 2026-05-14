@@ -60,6 +60,26 @@ def request_data():
     return request.get_json(silent=True) or {}
 
 
+def validate_v2_required_fields(data, required_fields):
+    if not is_v2_request():
+        return None
+
+    missing_fields = []
+    for field in required_fields:
+        value = data.get(field)
+        if value is None or (isinstance(value, str) and value.strip() == ''):
+            missing_fields.append(field)
+
+    if not missing_fields:
+        return None
+
+    return error_response(
+        f"Missing required fields: {', '.join(missing_fields)}.",
+        status_code=400,
+        code='INVALID_REQUEST',
+    )
+
+
 def gdb_result_response(file, action):
     global program_name
     try:
@@ -113,6 +133,10 @@ def start_gdb_session(program):
 @app.route('/gdb_command', methods=['POST'])
 def gdb_command():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['command', 'name'])
+    if validation_error:
+        return validation_error
+
     command = data.get('command')
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command(command))
@@ -122,6 +146,10 @@ def gdb_command():
 def compile_code():
     global program_name
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['code', 'name'])
+    if validation_error:
+        return validation_error
+
     code = data.get('code')
     name = data.get('name')
 
@@ -164,6 +192,10 @@ def upload_file():
 @app.route('/set_breakpoint', methods=['POST'])
 def set_breakpoint():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['location', 'name'])
+    if validation_error:
+        return validation_error
+
     location = data.get('location')
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command(f"break {location}"))
@@ -172,6 +204,10 @@ def set_breakpoint():
 @app.route('/info_breakpoints', methods=['POST'])
 def info_breakpoints():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command("info breakpoints"))
 
@@ -179,6 +215,10 @@ def info_breakpoints():
 @app.route('/stack_trace', methods=['POST'])
 def stack_trace():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command("bt"))
 
@@ -186,6 +226,10 @@ def stack_trace():
 @app.route('/threads', methods=['POST'])
 def threads():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command("info threads"))
 
@@ -193,6 +237,10 @@ def threads():
 @app.route('/get_registers', methods=['POST'])
 def get_registers():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command("info registers"))
 
@@ -200,6 +248,10 @@ def get_registers():
 @app.route('/get_locals', methods=['POST'])
 def get_locals():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command("info locals"))
 
@@ -207,6 +259,10 @@ def get_locals():
 @app.route('/run', methods=['POST'])
 def run_program():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command("run"))
 
@@ -214,6 +270,10 @@ def run_program():
 @app.route('/memory_map', methods=['POST'])
 def memory_map():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command("info proc mappings"))
 
@@ -221,6 +281,10 @@ def memory_map():
 @app.route('/continue', methods=['POST'])
 def continue_execution():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command("continue"))
 
@@ -228,6 +292,10 @@ def continue_execution():
 @app.route('/step_over', methods=['POST'])
 def step_over():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command("next"))
 
@@ -235,6 +303,10 @@ def step_over():
 @app.route('/step_into', methods=['POST'])
 def step_into():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command("step"))
 
@@ -242,6 +314,10 @@ def step_into():
 @app.route('/step_out', methods=['POST'])
 def step_out():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command("finish"))
 
@@ -249,6 +325,10 @@ def step_out():
 @app.route('/add_watchpoint', methods=['POST'])
 def add_watchpoint():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['variable', 'name'])
+    if validation_error:
+        return validation_error
+
     variable = data.get('variable')
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command(f"watch {variable}"))
@@ -257,6 +337,10 @@ def add_watchpoint():
 @app.route('/delete_breakpoint', methods=['POST'])
 def delete_breakpoint():
     data = request_data()
+    validation_error = validate_v2_required_fields(data, ['breakpoint_number', 'name'])
+    if validation_error:
+        return validation_error
+
     breakpoint_number = data.get('breakpoint_number')
     file = data.get('name')
     return gdb_result_response(file, lambda: execute_gdb_command(f"delete {breakpoint_number}"))

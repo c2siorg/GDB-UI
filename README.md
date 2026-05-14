@@ -125,6 +125,8 @@ V2 errors return stable client-safe messages and codes. Exception details are lo
 }
 ```
 
+V2 JSON endpoints validate required fields before running compiler or GDB actions. Missing or blank required fields return `400 Bad Request` with `error.code` set to `INVALID_REQUEST`.
+
 All responses include an `X-Correlation-ID` header. For V2 errors, the header value matches `error.trace_id`.
 
 Available V2 endpoints:
