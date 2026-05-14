@@ -24,12 +24,56 @@ def json_response(payload, status_code=200):
     return response, status_code
 
 
+def is_v2_request():
+    return request.path.startswith('/v2/')
+
+
 def success_response(data):
-    return json_response({'success': True, 'data': data})
+    if is_v2_request():
+        return json_response({'success': True, 'data': data})
+    return json_response({'success': True, **data})
 
 
-def error_response(message, status_code=500):
-    return json_response({'success': False, 'error': {'message': str(message), 'trace_id': g.trace_id}}, status_code)
+def error_response(message, status_code=500, code='REQUEST_FAILED', exc=None, legacy_field='error'):
+    if exc is not None:
+        app.logger.error("%s [%s]", message, code, exc_info=True)
+
+    if is_v2_request():
+        return json_response({
+            'success': False,
+            'error': {
+                'code': code,
+                'message': message,
+                'trace_id': g.trace_id,
+            }
+        }, status_code)
+
+    payload = {
+        'success': False,
+        legacy_field: message,
+        'trace_id': g.trace_id,
+    }
+    return json_response(payload, status_code)
+
+
+def request_data():
+    return request.get_json(silent=True) or {}
+
+
+def gdb_result_response(file, action):
+    global program_name
+    try:
+        if program_name != file:
+            start_gdb_session(f'{file}')
+        result = action()
+        return success_response({'result': result})
+    except Exception as e:
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
+
+
+def v2_route(path):
+    return app.route(f'/v2{path}', methods=['POST'])
+
 
 def execute_gdb_command(command):
     response2 = gdb_controller.write(command)
@@ -65,25 +109,19 @@ def start_gdb_session(program):
     except Exception as e:
         raise RuntimeError(f"Failed to start program: {e}")
 
+@v2_route('/gdb_command')
 @app.route('/gdb_command', methods=['POST'])
 def gdb_command():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     command = data.get('command')
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command(command))
 
-    try:
-        result = execute_gdb_command(command)
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/compile')
 @app.route('/compile', methods=['POST'])
 def compile_code():
     global program_name
-    data = request.get_json()
+    data = request_data()
     code = data.get('code')
     name = data.get('name')
 
@@ -96,18 +134,25 @@ def compile_code():
         program_name = None
         return success_response({'output': 'Compilation successful.'})
     else:
-        return error_response(result.stderr, status_code=400)
+        app.logger.warning("Compilation failed for %s: %s", name, result.stderr)
+        return error_response(
+            'Compilation failed.',
+            status_code=400,
+            code='COMPILATION_FAILED',
+            legacy_field='output',
+        )
 
+@v2_route('/upload_file')
 @app.route('/upload_file', methods=['POST'])    
 def upload_file():
     if 'file' not in request.files or 'name' not in request.form:
-        return error_response('No file or name provided', status_code=400)
+        return error_response('No file or name provided', status_code=400, code='INVALID_UPLOAD')
 
     file = request.files['file']
     name = request.form['name']
 
     if file.filename == '':
-        return error_response('No selected file', status_code=400)
+        return error_response('No selected file', status_code=400, code='INVALID_UPLOAD')
 
     file_path = os.path.join('output/', ensure_exe_extension(name))
     file.save(file_path)
@@ -115,204 +160,106 @@ def upload_file():
     return success_response({'message': 'File uploaded successfully', 'file_path': file_path})
 
 
+@v2_route('/set_breakpoint')
 @app.route('/set_breakpoint', methods=['POST'])
 def set_breakpoint():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     location = data.get('location')
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command(f"break {location}"))
 
-    try:
-        result = execute_gdb_command(f"break {location}")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/info_breakpoints')
 @app.route('/info_breakpoints', methods=['POST'])
 def info_breakpoints():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command("info breakpoints"))
 
-    try:
-        result = execute_gdb_command("info breakpoints")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/stack_trace')
 @app.route('/stack_trace', methods=['POST'])
 def stack_trace():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command("bt"))
 
-    try:
-        result = execute_gdb_command("bt")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/threads')
 @app.route('/threads', methods=['POST'])
 def threads():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command("info threads"))
 
-    try:
-        result = execute_gdb_command("info threads")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/get_registers')
 @app.route('/get_registers', methods=['POST'])
 def get_registers():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command("info registers"))
 
-    try:
-        result = execute_gdb_command("info registers")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/get_locals')
 @app.route('/get_locals', methods=['POST'])
 def get_locals():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command("info locals"))
 
-    try:
-        result = execute_gdb_command("info locals")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/run')
 @app.route('/run', methods=['POST'])
 def run_program():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command("run"))
 
-    try:
-        result = execute_gdb_command("run")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/memory_map')
 @app.route('/memory_map', methods=['POST'])
 def memory_map():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command("info proc mappings"))
 
-    try:
-        result = execute_gdb_command("info proc mappings")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/continue')
 @app.route('/continue', methods=['POST'])
 def continue_execution():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command("continue"))
 
-    try:
-        result = execute_gdb_command("continue")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/step_over')
 @app.route('/step_over', methods=['POST'])
 def step_over():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command("next"))
 
-    try:
-        result = execute_gdb_command("next")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/step_into')
 @app.route('/step_into', methods=['POST'])
 def step_into():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command("step"))
 
-    try:
-        result = execute_gdb_command("step")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/step_out')
 @app.route('/step_out', methods=['POST'])
 def step_out():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command("finish"))
 
-    try:
-        result = execute_gdb_command("finish")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/add_watchpoint')
 @app.route('/add_watchpoint', methods=['POST'])
 def add_watchpoint():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     variable = data.get('variable')
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
+    return gdb_result_response(file, lambda: execute_gdb_command(f"watch {variable}"))
 
-    try:
-        result = execute_gdb_command(f"watch {variable}")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
-
+@v2_route('/delete_breakpoint')
 @app.route('/delete_breakpoint', methods=['POST'])
 def delete_breakpoint():
-    global program_name
-    data = request.get_json()
+    data = request_data()
     breakpoint_number = data.get('breakpoint_number')
     file = data.get('name')
-    if program_name != file:
-        start_gdb_session(f'{file}')
-
-    try:
-        result = execute_gdb_command(f"delete {breakpoint_number}")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response(e)
+    return gdb_result_response(file, lambda: execute_gdb_command(f"delete {breakpoint_number}"))
 
 
 if __name__ == '__main__':

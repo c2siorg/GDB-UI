@@ -13,7 +13,7 @@ class TestGDBRoutes(TestCase):
         app.config["TESTING"] = True
         return app
 
-    def assert_success_response(self, response):
+    def assert_v2_success_response(self, response):
         body = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(body["success"])
@@ -24,17 +24,41 @@ class TestGDBRoutes(TestCase):
         self.assertTrue(response.headers["X-Correlation-ID"])
         return body
 
-    def assert_error_response(self, response, expected_status):
+    def assert_v2_error_response(self, response, expected_status):
         body = json.loads(response.data)
         self.assertEqual(response.status_code, expected_status)
         self.assertFalse(body["success"])
         self.assertIn("error", body)
         self.assertNotIn("data", body)
         self.assertNotIn("code", body)
+        self.assertIn("code", body["error"])
         self.assertIn("message", body["error"])
         self.assertIn("trace_id", body["error"])
         self.assertIn("X-Correlation-ID", response.headers)
         self.assertEqual(body["error"]["trace_id"], response.headers["X-Correlation-ID"])
+        return body
+
+    def assert_legacy_success_response(self, response):
+        body = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(body["success"])
+        self.assertNotIn("data", body)
+        self.assertNotIn("error", body)
+        self.assertNotIn("code", body)
+        self.assertIn("X-Correlation-ID", response.headers)
+        self.assertTrue(response.headers["X-Correlation-ID"])
+        return body
+
+    def assert_legacy_error_response(self, response, expected_status, error_field="error"):
+        body = json.loads(response.data)
+        self.assertEqual(response.status_code, expected_status)
+        self.assertFalse(body["success"])
+        self.assertIn(error_field, body)
+        self.assertNotIn("data", body)
+        self.assertNotIn("code", body)
+        self.assertIn("trace_id", body)
+        self.assertIn("X-Correlation-ID", response.headers)
+        self.assertEqual(body["trace_id"], response.headers["X-Correlation-ID"])
         return body
 
     @mock.patch("main.subprocess.run")
@@ -45,8 +69,9 @@ class TestGDBRoutes(TestCase):
             "name": "test_program",
         }
 
-        response = self.client.post("/compile", data=json.dumps(payload), content_type="application/json")
-        body = self.assert_success_response(response)
+        with mock.patch("builtins.open", mock.mock_open()):
+            response = self.client.post("/v2/compile", data=json.dumps(payload), content_type="application/json")
+        body = self.assert_v2_success_response(response)
         self.assertEqual(body["data"]["output"], "Compilation successful.")
 
     @mock.patch("main.subprocess.run")
@@ -54,9 +79,25 @@ class TestGDBRoutes(TestCase):
         mock_run.return_value = mock.Mock(returncode=1, stderr="compile error")
         payload = {"code": "int main(){", "name": "bad_program"}
 
-        response = self.client.post("/compile", data=json.dumps(payload), content_type="application/json")
-        body = self.assert_error_response(response, 400)
-        self.assertIn("compile error", body["error"]["message"])
+        with mock.patch("builtins.open", mock.mock_open()):
+            response = self.client.post("/v2/compile", data=json.dumps(payload), content_type="application/json")
+        body = self.assert_v2_error_response(response, 400)
+        self.assertEqual(body["error"]["code"], "COMPILATION_FAILED")
+        self.assertEqual(body["error"]["message"], "Compilation failed.")
+        self.assertNotIn("compile error", json.dumps(body))
+
+    @mock.patch("main.subprocess.run")
+    def test_legacy_compile_schema(self, mock_run):
+        mock_run.return_value = mock.Mock(returncode=0, stderr="")
+        payload = {
+            "code": '#include <iostream>\nint main() { std::cout << "Hello"; return 0; }',
+            "name": "test_program",
+        }
+
+        with mock.patch("builtins.open", mock.mock_open()):
+            response = self.client.post("/compile", data=json.dumps(payload), content_type="application/json")
+        body = self.assert_legacy_success_response(response)
+        self.assertEqual(body["output"], "Compilation successful.")
 
     @mock.patch("main.start_gdb_session")
     @mock.patch("main.execute_gdb_command")
@@ -84,13 +125,45 @@ class TestGDBRoutes(TestCase):
 
         for route, payload in route_payloads:
             with self.subTest(route=route):
-                response = self.client.post(route, data=json.dumps(payload), content_type="application/json")
-                body = self.assert_success_response(response)
+                response = self.client.post(f"/v2{route}", data=json.dumps(payload), content_type="application/json")
+                body = self.assert_v2_success_response(response)
                 self.assertIn("result", body["data"])
 
     @mock.patch("main.start_gdb_session")
     @mock.patch("main.execute_gdb_command")
+    def test_legacy_gdb_route_success_schema(self, mock_execute, mock_start):
+        mock_execute.return_value = "ok"
+        mock_start.return_value = None
+
+        response = self.client.post(
+            "/gdb_command",
+            data=json.dumps({"command": "info locals", "name": "program"}),
+            content_type="application/json",
+        )
+
+        body = self.assert_legacy_success_response(response)
+        self.assertEqual(body["result"], "ok")
+
+    @mock.patch("main.start_gdb_session")
+    @mock.patch("main.execute_gdb_command")
     def test_gdb_route_error_schema(self, mock_execute, mock_start):
+        mock_execute.side_effect = RuntimeError("gdb boom")
+        mock_start.return_value = None
+
+        response = self.client.post(
+            "/v2/gdb_command",
+            data=json.dumps({"command": "info locals", "name": "program"}),
+            content_type="application/json",
+        )
+
+        body = self.assert_v2_error_response(response, 500)
+        self.assertEqual(body["error"]["code"], "GDB_COMMAND_FAILED")
+        self.assertEqual(body["error"]["message"], "GDB command failed.")
+        self.assertNotIn("gdb boom", json.dumps(body))
+
+    @mock.patch("main.start_gdb_session")
+    @mock.patch("main.execute_gdb_command")
+    def test_legacy_gdb_route_error_schema(self, mock_execute, mock_start):
         mock_execute.side_effect = RuntimeError("gdb boom")
         mock_start.return_value = None
 
@@ -100,8 +173,9 @@ class TestGDBRoutes(TestCase):
             content_type="application/json",
         )
 
-        body = self.assert_error_response(response, 500)
-        self.assertIn("gdb boom", body["error"]["message"])
+        body = self.assert_legacy_error_response(response, 500)
+        self.assertEqual(body["error"], "GDB command failed.")
+        self.assertNotIn("gdb boom", json.dumps(body))
 
     @mock.patch("werkzeug.datastructures.FileStorage.save")
     def test_upload_file(self, mock_save):
@@ -110,35 +184,48 @@ class TestGDBRoutes(TestCase):
             "name": "test_program",
         }
 
-        response = self.client.post("/upload_file", content_type="multipart/form-data", data=data)
-        body = self.assert_success_response(response)
+        response = self.client.post("/v2/upload_file", content_type="multipart/form-data", data=data)
+        body = self.assert_v2_success_response(response)
         self.assertEqual(body["data"]["message"], "File uploaded successfully")
         self.assertEqual(body["data"]["file_path"], "output/test_program.exe")
         mock_save.assert_called_once()
 
+    @mock.patch("werkzeug.datastructures.FileStorage.save")
+    def test_legacy_upload_file(self, mock_save):
+        data = {
+            "file": (BytesIO(b"dummy file content"), "test_program"),
+            "name": "test_program",
+        }
+
+        response = self.client.post("/upload_file", content_type="multipart/form-data", data=data)
+        body = self.assert_legacy_success_response(response)
+        self.assertEqual(body["message"], "File uploaded successfully")
+        self.assertEqual(body["file_path"], "output/test_program.exe")
+        mock_save.assert_called_once()
+
     def test_upload_file_no_file(self):
         response = self.client.post(
-            "/upload_file", content_type="multipart/form-data", data={"name": "test_program"}
+            "/v2/upload_file", content_type="multipart/form-data", data={"name": "test_program"}
         )
-        body = self.assert_error_response(response, 400)
+        body = self.assert_v2_error_response(response, 400)
         self.assertIn("No file or name provided", body["error"]["message"])
 
     def test_upload_file_no_name(self):
         response = self.client.post(
-            "/upload_file",
+            "/v2/upload_file",
             content_type="multipart/form-data",
             data={"file": (BytesIO(b"dummy file content"), "test_program")},
         )
-        body = self.assert_error_response(response, 400)
+        body = self.assert_v2_error_response(response, 400)
         self.assertIn("No file or name provided", body["error"]["message"])
 
     def test_upload_file_empty_filename(self):
         response = self.client.post(
-            "/upload_file",
+            "/v2/upload_file",
             content_type="multipart/form-data",
             data={"file": (BytesIO(b"dummy file content"), ""), "name": "test_program"},
         )
-        body = self.assert_error_response(response, 400)
+        body = self.assert_v2_error_response(response, 400)
         self.assertIn("No selected file", body["error"]["message"])
 
 
