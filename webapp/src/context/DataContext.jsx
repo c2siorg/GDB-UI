@@ -1,8 +1,6 @@
 import React, {
   createContext,
   useState,
-  useEffect,
-  useCallback,
   useContext,
 } from "react";
 
@@ -18,25 +16,6 @@ export const DataProvider = ({ children }) => {
   const [memoryMap, setMemoryMap] = useState("");
   const [terminalOutput, setTerminalOutput] = useState("");
   const [commandPress, setCommandPress] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    if (refresh) {
-      try {
-        setRefresh(false);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setRefresh(false);
-      }
-    }
-  }, [refresh]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const runCommandInTerminal = (command) => {
-    setTerminalOutput(command);
-  };
 
   return (
     <DataContext.Provider
