@@ -9,18 +9,33 @@ const TerminalComp = () => {
   const [output, setOutput] = useState("");
   const terminalRef = useRef("null");
 
-  const handleCommand = async (command, ...args) => {
-    const fullCommand = [command, ...args].join(" ");
+  const executeCommand = async (fullCommand, signal) => {
     console.log("Full Command:", fullCommand);
     try {
-      const { data } = await axios.post("http://127.0.0.1:10000/gdb_command", {
-        command: fullCommand,
-        name: "program",
-      });
+      const { data } = await axios.post(
+        "http://127.0.0.1:10000/gdb_command",
+        {
+          command: fullCommand,
+          name: "program",
+        },
+        signal ? { signal } : undefined
+      );
       return data["result"];
     } catch (error) {
+      if (
+        error?.name === "AbortError" ||
+        error?.name === "CanceledError" ||
+        error?.code === "ERR_CANCELED"
+      ) {
+        return null;
+      }
       return "Error executing command";
     }
+  };
+
+  const handleCommand = async (command, ...args) => {
+    const fullCommand = [command, ...args].join(" ");
+    return executeCommand(fullCommand);
   };
 
   const defaultHandler = async (command, ...args) => {
@@ -30,11 +45,24 @@ const TerminalComp = () => {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const runTerminalCommand = async () => {
+      if (!terminalOutput) return;
+      const result = await executeCommand(terminalOutput, signal);
+      if (!signal.aborted && result !== null) {
+        setOutput(result);
+      }
+    };
+
     console.log(terminalOutput);
-    if (terminalOutput) {
-      console.log(terminalOutput);
-      defaultHandler(terminalOutput);
-    }
+    if (terminalOutput) console.log(terminalOutput);
+    runTerminalCommand();
+
+    return () => {
+      controller.abort();
+    };
   }, [commandPress]);
 
   return (

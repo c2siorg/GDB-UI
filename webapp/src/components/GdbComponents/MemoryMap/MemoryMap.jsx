@@ -17,17 +17,42 @@ const data = [
 const MemoryMap = () => {
   const { refresh, memoryMap, setMemoryMap } = DataState();
 
-  const fetchMemoryMap = async () => {
-    console.log("Click form memory map");
-    const data = await axios.post("http://127.0.0.1:10000/memory_map", {
-      name: "program",
-    });
-    console.log(data.data.result);
-    setMemoryMap(data.data.result);
-  };
-
   useEffect(() => {
-    if (refresh) fetchMemoryMap();
+    if (!refresh) return;
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const fetchMemoryMap = async () => {
+      try {
+        console.log("Click form memory map");
+        const data = await axios.post(
+          "http://127.0.0.1:10000/memory_map",
+          {
+            name: "program",
+          },
+          { signal }
+        );
+        if (!signal.aborted) {
+          console.log(data.data.result);
+          setMemoryMap(data.data.result);
+        }
+      } catch (error) {
+        if (
+          error?.name !== "AbortError" &&
+          error?.name !== "CanceledError" &&
+          error?.code !== "ERR_CANCELED"
+        ) {
+          console.error("Fetch failed:", error);
+        }
+      }
+    };
+
+    fetchMemoryMap();
+
+    return () => {
+      controller.abort();
+    };
   }, [refresh]);
 
   return (
