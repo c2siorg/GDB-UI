@@ -19,7 +19,7 @@ const Breakpoint = () => {
     }
     try {
       const data = await axios.post("http://127.0.0.1:10000/set_breakpoint", {
-        location: breakLine,
+        location: breakLine || breakFunction,
         name: "program",
       });
       console.log(data);
@@ -37,21 +37,21 @@ const Breakpoint = () => {
       <div className="add-breakpoint">Add Breakpoint</div>
       <div className="lower-breakpoint">
         <div className="line-breakpoint">
-          <a>Line</a>
+          <label htmlFor="breakpoint-line">Line</label>
           <input
             type="text"
-            name=""
-            id=""
+            name="breakpoint-line"
+            id="breakpoint-line"
             value={breakLine}
             onChange={(e) => setBreakLine(e.target.value)}
           />
         </div>
         <div className="line-breakpoint">
-          <a>Function</a>
+          <label htmlFor="breakpoint-function">Function</label>
           <input
             type="text"
-            name=""
-            id=""
+            name="breakpoint-function"
+            id="breakpoint-function"
             value={breakFunction}
             onChange={(e) => setBreakFunction(e.target.value)}
           />

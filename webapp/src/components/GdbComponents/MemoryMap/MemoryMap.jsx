@@ -37,8 +37,8 @@ const MemoryMap = () => {
         {memoryMap
           ? memoryMap
           : data?.length > 0
-          ? data.map((obj) => {
-              return <a>{obj}</a>;
+          ? data.map((obj, index) => {
+              return <pre key={`${obj}-${index}`}>{obj}</pre>;
             })
           : ""}
       </div>
