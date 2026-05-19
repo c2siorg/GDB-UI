@@ -35,7 +35,7 @@ const DebugHeader = () => {
               className="icon"
               title="Previous"
               onClick={() => {
-                handleRun("previous");
+                handleRun("reverse-next");
               }}
             />
             <FaArrowRight
@@ -84,9 +84,9 @@ const DebugHeader = () => {
             />
             <BsArrowRightSquareFill
               className="icon"
-              title="Run"
+              title="Step Out"
               onClick={() => {
-                handleRun("step-out");
+                handleRun("finish");
               }}
             />
           </div>
