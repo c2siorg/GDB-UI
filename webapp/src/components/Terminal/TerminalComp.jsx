@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ReactTerminal } from "react-terminal";
 import { toast } from "react-toastify";
-import axios from "axios";
+import api from "../../api";
 import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
 
 const TerminalComp = () => {
-  const { terminalOutput, commandPress, fileName } = DataState();
+  const { terminalOutput, commandCount } = DataState();
   const [output, setOutput] = useState("");
   const terminalRef = useRef(null);
 
@@ -14,9 +14,9 @@ const TerminalComp = () => {
     const fullCommand = [command, ...args].join(" ");
     console.log("Full Command:", fullCommand);
     try {
-      const { data } = await axios.post("http://127.0.0.1:10000/gdb_command", {
+      const { data } = await api.post("/gdb_command", {
         command: fullCommand,
-        name: fileName || "program",
+        name: "program",
       });
       return data["result"];
     } catch (error) {
@@ -37,7 +37,7 @@ const TerminalComp = () => {
       console.log(terminalOutput);
       defaultHandler(terminalOutput);
     }
-  }, [commandPress]);
+  }, [commandCount]);
 
   return (
     <div className="terminal">

@@ -25,7 +25,7 @@ test("renders Threads component within Debug route", () => {
       </DataProvider>
     </MemoryRouter>
   );
-  const threadsComponent = screen.getByText(/Threads/i);
+  const threadsComponent = screen.getByText("No active threads.");
   expect(threadsComponent).toBeInTheDocument();
   // Add any other checks specific to the Threads component
 });

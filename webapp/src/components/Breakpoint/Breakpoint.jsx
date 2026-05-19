@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./Breakpoint.css";
 import { toast } from "react-toastify";
-import axios from "axios";
+import api from "../../api";
 
 const Breakpoint = () => {
   const [breakLine, setBreakLine] = useState("");
@@ -16,7 +16,7 @@ const Breakpoint = () => {
       return;
     }
     try {
-      const data = await axios.post("http://127.0.0.1:10000/set_breakpoint", {
+      const data = await api.post("/set_breakpoint", {
         location: breakLine,
         name: "program",
       });

@@ -12,7 +12,7 @@ export const DataProvider = ({ children }) => {
   const [infoBreakpointData, setInfoBreakpointData] = useState("");
   const [memoryMap, setMemoryMap] = useState("");
   const [terminalOutput, setTerminalOutput] = useState("");
-  const [commandPress, setCommandPress] = useState(true);
+  const [commandCount, setCommandCount] = useState(0);
 
   const fetchData = useCallback(async () => {
     if (refresh) {
@@ -51,8 +51,8 @@ export const DataProvider = ({ children }) => {
         dark,
         setDark,
         terminalOutput,
-        setCommandPress,
-        commandPress,
+        setCommandCount,
+        commandCount,
         setTerminalOutput,
       }}
     >
