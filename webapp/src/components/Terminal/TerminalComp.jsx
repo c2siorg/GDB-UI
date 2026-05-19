@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ReactTerminal } from "react-terminal";
-import axios from "axios";
+import api from "../../api";
 import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
 
 const TerminalComp = () => {
-  const { terminalOutput, commandPress, setIsLoading } = DataState();
+  const { terminalOutput, commandCount, setIsLoading } = DataState();
   const [output, setOutput] = useState("");
-  const terminalRef = useRef("null");
+  const terminalRef = useRef(null);
 
   const handleCommand = async (command, ...args) => {
     const fullCommand = [command, ...args].join(" ");
     console.log("Full Command:", fullCommand);
     setIsLoading(true);
     try {
-      const { data } = await axios.post("http://127.0.0.1:10000/gdb_command", {
+      const { data } = await api.post("/gdb_command", {
         command: fullCommand,
         name: "program",
       });
@@ -38,7 +38,7 @@ const TerminalComp = () => {
       console.log(terminalOutput);
       defaultHandler(terminalOutput);
     }
-  }, [commandPress]);
+  }, [commandCount]);
 
   return (
     <div className="terminal">

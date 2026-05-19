@@ -18,15 +18,14 @@ const DebugHeader = () => {
     refresh,
     setRefresh,
     setTerminalOutput,
-    setCommandPress,
-    commandPress,
-    isLoading
+    setCommandCount,
+    isLoading,
   } = DataState();
 
   const handleRun = (command) => {
     if (isLoading) return;
     console.log("clicked");
-    setCommandPress(!commandPress);
+    setCommandCount(prev => prev + 1);
     setTerminalOutput(command);
   };
 
@@ -45,7 +44,7 @@ const DebugHeader = () => {
                   className="icon"
                   title="Previous"
                   onClick={() => {
-                    handleRun("previous");
+                    handleRun("reverse-next");
                   }}
                 />
                 <FaArrowRight
@@ -94,9 +93,9 @@ const DebugHeader = () => {
                 />
                 <BsArrowRightSquareFill
                   className="icon"
-                  title="Run"
+                  title="Step Out"
                   onClick={() => {
-                    handleRun("step-out");
+                    handleRun("finish");
                   }}
                 />
               </div>
