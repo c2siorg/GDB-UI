@@ -3,7 +3,9 @@ import { DataState } from "./../../context/DataContext";
 import "./Functions.css";
 import axios from "axios";
 
-const data = [
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:10000";
+
+const hardcodedData = [
   "sub.KERNEL32.dll_DeleteCritical_231",
   "sub.KERNEL32.dll_DeleteCritical_231",
   "sub.KERNEL32.dll_DeleteCritical_231",
@@ -22,7 +24,7 @@ const Functions = () => {
   const fetchFunctionsData = async () => {
     try {
       console.log("click from functions");
-      const data = await axios.post("http://127.0.0.1:10000/get_locals", {
+      const data = await axios.post(`${API_BASE_URL}/get_locals`, {
         name: "program",
       });
       console.log(data.data.result);
@@ -44,10 +46,9 @@ const Functions = () => {
       offset
       <div className="functions">
         {functions}
-        {data.map((obj) => {
-          return <a>{obj}</a>;
+        {hardcodedData.map((obj, index) => {
+          return <a key={index}>{obj}</a>;
         })}
-        {/* <a>sub.KERNEL32.dll_DeleteCritical_231</a> */}
       </div>
     </div>
   );
