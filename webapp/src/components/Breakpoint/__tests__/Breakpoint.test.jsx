@@ -27,3 +27,12 @@ test("typing in Line input updates the value correctly", () => {
 
   expect(lineInput[0]).toHaveValue("123");
 });
+
+test("typing in Function input updates the value correctly", () => {
+  render(<Breakpoint />);
+
+  const inputs = screen.getAllByRole("textbox");
+  fireEvent.change(inputs[1], { target: { value: "main" } });
+
+  expect(inputs[1]).toHaveValue("main");
+});
