@@ -17,6 +17,7 @@ export const DataProvider = ({ children }) => {
   const [infoBreakpointData, setInfoBreakpointData] = useState("");
   const [memoryMap, setMemoryMap] = useState("");
   const [terminalOutput, setTerminalOutput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [commandCount, setCommandCount] = useState(0);
 
   const fetchData = useCallback(async () => {
@@ -59,6 +60,8 @@ export const DataProvider = ({ children }) => {
         setCommandCount,
         commandCount,
         setTerminalOutput,
+        isLoading,
+        setIsLoading,
       }}
     >
       {children}

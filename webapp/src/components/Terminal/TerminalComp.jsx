@@ -5,13 +5,14 @@ import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
 
 const TerminalComp = () => {
-  const { terminalOutput, commandCount } = DataState();
+  const { terminalOutput, commandCount, setIsLoading } = DataState();
   const [output, setOutput] = useState("");
   const terminalRef = useRef(null);
 
   const handleCommand = async (command, ...args) => {
     const fullCommand = [command, ...args].join(" ");
     console.log("Full Command:", fullCommand);
+    setIsLoading(true);
     try {
       const { data } = await api.post("/gdb_command", {
         command: fullCommand,
@@ -20,6 +21,8 @@ const TerminalComp = () => {
       return data["result"];
     } catch (error) {
       return "Error executing command";
+    } finally {
+      setIsLoading(false);
     }
   };
 

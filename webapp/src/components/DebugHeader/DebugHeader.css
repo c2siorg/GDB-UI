@@ -97,3 +97,16 @@ body {
   border-radius: 2px;
   background: var(--primary-orange, #e88f40);
 }
+
+.rotating-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

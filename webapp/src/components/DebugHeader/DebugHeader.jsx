@@ -4,6 +4,7 @@ import {
   FaArrowRight,
   FaForward,
   FaSquare,
+  FaSpinner
 } from "react-icons/fa6";
 import { IoReload } from "react-icons/io5";
 import { MdSkipNext, MdSkipPrevious } from "react-icons/md";
@@ -18,9 +19,11 @@ const DebugHeader = () => {
     setRefresh,
     setTerminalOutput,
     setCommandCount,
+    isLoading,
   } = DataState();
 
   const handleRun = (command) => {
+    if (isLoading) return;
     console.log("clicked");
     setCommandCount(prev => prev + 1);
     setTerminalOutput(command);
@@ -30,66 +33,74 @@ const DebugHeader = () => {
     <div className="parent-debug-header">
       <div className="debug-header">
         <div className="icons">
-          <div className="arrow">
-            <FaArrowLeft
-              className="icon"
-              title="Previous"
-              onClick={() => {
-                handleRun("reverse-next");
-              }}
-            />
-            <FaArrowRight
-              className="icon"
-              title="Next"
-              onClick={() => {
-                handleRun("next");
-              }}
-            />
-          </div>
-          <div className="others">
-            <IoReload
-              className="icon"
-              title="Run"
-              onClick={() => {
-                handleRun("run");
-              }}
-            />
-            <FaForward
-              className="icon"
-              title="Continue"
-              onClick={() => {
-                handleRun("continue");
-              }}
-            />
-            <FaSquare
-              className="icon"
-              title="Stop"
-              onClick={() => {
-                handleRun("stop");
-              }}
-            />
-            <MdSkipNext
-              className="icon"
-              title="Step"
-              onClick={() => {
-                handleRun("step");
-              }}
-            />
-            <MdSkipPrevious
-              className="icon"
-              title="Finish"
-              onClick={() => {
-                handleRun("finish");
-              }}
-            />
-            <BsArrowRightSquareFill
-              className="icon"
-              title="Step Out"
-              onClick={() => {
-                handleRun("finish");
-              }}
-            />
-          </div>
+          {isLoading ? (
+            <div className="others">
+              <FaSpinner className="icon rotating-spinner" title="Loading..." />
+            </div>
+          ) : (
+            <>
+              <div className="arrow">
+                <FaArrowLeft
+                  className="icon"
+                  title="Previous"
+                  onClick={() => {
+                    handleRun("reverse-next");
+                  }}
+                />
+                <FaArrowRight
+                  className="icon"
+                  title="Next"
+                  onClick={() => {
+                    handleRun("next");
+                  }}
+                />
+              </div>
+              <div className="others">
+                <IoReload
+                  className="icon"
+                  title="Run"
+                  onClick={() => {
+                    handleRun("run");
+                  }}
+                />
+                <FaForward
+                  className="icon"
+                  title="Continue"
+                  onClick={() => {
+                    handleRun("continue");
+                  }}
+                />
+                <FaSquare
+                  className="icon"
+                  title="Stop"
+                  onClick={() => {
+                    handleRun("stop");
+                  }}
+                />
+                <MdSkipNext
+                  className="icon"
+                  title="Step"
+                  onClick={() => {
+                    handleRun("step");
+                  }}
+                />
+                <MdSkipPrevious
+                  className="icon"
+                  title="Finish"
+                  onClick={() => {
+                    handleRun("finish");
+                  }}
+                />
+                <BsArrowRightSquareFill
+                  className="icon"
+                  title="Step Out"
+                  onClick={() => {
+                    handleRun("finish");
+                  }}
+                />
+              </div>
+            </>
+          )}
         </div>
         <div className="filename">
           <div className="filename-content">filename</div>
