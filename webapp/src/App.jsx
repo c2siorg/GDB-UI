@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import Debug from "./pages/Debug/Debug";
+import Home from "./pages/Home/Home";
+import Login from "./pages/Login/Login";
 import Threads from "./components/GdbComponents/Threads/Threads";
 import LocalVariable from "./components/GdbComponents/LocalVariable/LocalVariable";
 import Context from "./components/GdbComponents/Context/Context";
@@ -14,7 +16,7 @@ const App = () => {
   const { setDark, dark, isDarkMode, setDarkMode } = DataState();
 
   const toggleDarkMode = () => {
-    setDarkMode((isDarkMode) => (isDarkMode === "dark" ? "light" : "dark"));
+    setDarkMode((prev) => (prev === "dark" ? "light" : "dark"));
     setDark(!dark);
   };
 
@@ -37,7 +39,8 @@ const App = () => {
           <Route path="memoryMap" element={<MemoryMap />} />
           <Route path="breakPoints" element={<BreakPoints />} />
         </Route>
-        {/* You can add more routes here */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
       <Footer />
     </div>
