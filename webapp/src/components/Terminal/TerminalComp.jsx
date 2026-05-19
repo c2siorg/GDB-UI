@@ -5,7 +5,7 @@ import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
 
 const TerminalComp = () => {
-  const { terminalOutput, commandCount } = DataState();
+  const { terminalOutput, commandCount, fileName } = DataState();
   const [output, setOutput] = useState("");
   const terminalRef = useRef(null);
 
@@ -15,7 +15,7 @@ const TerminalComp = () => {
     try {
       const { data } = await api.post("/gdb_command", {
         command: fullCommand,
-        name: "program",
+        name: fileName,
       });
       return data["result"];
     } catch (error) {

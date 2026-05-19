@@ -18,6 +18,7 @@ export const DataProvider = ({ children }) => {
   const [memoryMap, setMemoryMap] = useState("");
   const [terminalOutput, setTerminalOutput] = useState("");
   const [commandCount, setCommandCount] = useState(0);
+  const [fileName, setFileName] = useState("program");
 
   const fetchData = useCallback(async () => {
     if (refresh) {
@@ -59,6 +60,8 @@ export const DataProvider = ({ children }) => {
         setCommandCount,
         commandCount,
         setTerminalOutput,
+        fileName,
+        setFileName,
       }}
     >
       {children}

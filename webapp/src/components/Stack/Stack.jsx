@@ -4,13 +4,13 @@ import "./Stack.css";
 import api from "../../api";
 
 const Stack = () => {
-  const { refresh, stack, setStack } = DataState();
+  const { stack, setStack, refresh, fileName } = DataState();
 
   const fetStackData = async () => {
     try {
       console.log("click from stack");
       const data = await api.post("/stack_trace", {
-        name: "program",
+        name: fileName,
       });
       console.log(data.data.result);
       setStack(data.data.result);

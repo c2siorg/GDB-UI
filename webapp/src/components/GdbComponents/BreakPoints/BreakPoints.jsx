@@ -4,11 +4,11 @@ import "./BreakPoints.css";
 import api from "../../../api";
 
 const BreakPoints = () => {
-  const { refresh, setInfoBreakpointData, infoBreakpointData } = DataState();
+  const { refresh, setInfoBreakpointData, infoBreakpointData, fileName } = DataState();
 
   const fetchInfoBreakpoints = async () => {
     const data = await api.post("/info_breakpoints", {
-      name: "program",
+      name: fileName,
     });
     console.log(data.data["result"]);
     setInfoBreakpointData(data.data["result"]);
