@@ -3,15 +3,15 @@ import "./Breakpoint.css";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios";
 import { DataState } from "../../context/DataContext";
+import api from "../../api";
 
 const Breakpoint = () => {
   const [breakLine, setBreakLine] = useState("");
   const [breakFunction, setBreakFunction] = useState("");
-  const { fileName } = DataState();
+  const { fileName = "program" } = DataState() || {};
 
-  const handleSaveBreak = async (e) => {
+  const handleBreakSave = async (e) => {
     e.preventDefault();
     if (breakLine === "" && breakFunction === "") {
       toast.error("Enter any of the field", {
@@ -20,9 +20,9 @@ const Breakpoint = () => {
       return;
     }
     try {
-      const data = await axios.post("http://127.0.0.1:10000/set_breakpoint", {
-        name: fileName,
+      const data = await api.post("/set_breakpoint", {
         location: breakFunction || breakLine,
+        name: fileName,
       });
       console.log(data);
       toast.success("Added breakpoint", {

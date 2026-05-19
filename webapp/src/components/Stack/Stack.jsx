@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { DataState } from "./../../context/DataContext";
 import "./Stack.css";
-import axios from "axios";
+import api from "../../api";
 
 const Stack = () => {
   const { stack, setStack, refresh, fileName } = DataState();
@@ -9,7 +9,7 @@ const Stack = () => {
   const fetStackData = async () => {
     try {
       console.log("click from stack");
-      const data = await axios.post("http://127.0.0.1:10000/stack_trace", {
+      const data = await api.post("/stack_trace", {
         name: fileName,
       });
       console.log(data.data.result);
@@ -27,10 +27,6 @@ const Stack = () => {
       Offset
       <div className="stack">
         <div>{stack}</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
-        <div>0x001780c8 0x001780c8 0x001780c8 0x001780c8</div>
       </div>
     </div>
   );

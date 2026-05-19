@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { DataState } from "./../../../context/DataContext";
 
 import "./MemoryMap.css";
-import axios from "axios";
+import api from "../../../api";
 
 const data = [
   "0x7fffffffe270: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00",
@@ -19,7 +19,7 @@ const MemoryMap = () => {
 
   const fetchMemoryMap = async () => {
     console.log("Click form memory map");
-    const data = await axios.post("http://127.0.0.1:10000/memory_map", {
+    const data = await api.post("/memory_map", {
       name: fileName,
     });
     console.log(data.data.result);
