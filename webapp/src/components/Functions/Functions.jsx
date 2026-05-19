@@ -1,9 +1,8 @@
 import React, { useEffect } from "react";
 import { DataState } from "./../../context/DataContext";
 import "./Functions.css";
+import { toast } from "react-toastify";
 import api from "../../api";
-
-
 
 const Functions = () => {
   const { refresh, functions, setFunctions } = DataState();
@@ -17,7 +16,7 @@ const Functions = () => {
       console.log(data.data.result);
       setFunctions(data.data.result);
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to fetch Functions symbols");
     }
   };
 
@@ -30,7 +29,6 @@ const Functions = () => {
   return (
     <div className="functions-parent">
       <a className="functions-heading"> Functions</a>
-      offset
       <div className="functions">
         {functions}
       </div>

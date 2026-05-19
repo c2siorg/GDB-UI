@@ -1,10 +1,5 @@
-import React, {
-  createContext,
-  useState,
-  useEffect,
-  useCallback,
-  useContext,
-} from "react";
+import React, { createContext, useContext, useCallback, useState, useEffect } from "react";
+import { toast } from "react-toastify";
 
 export const DataContext = createContext();
 
@@ -24,7 +19,7 @@ export const DataProvider = ({ children }) => {
       try {
         setRefresh(false);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        toast.error("Failed to establish backend sync");
         setRefresh(false);
       }
     }

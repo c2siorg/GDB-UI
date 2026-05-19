@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ReactTerminal } from "react-terminal";
+import { toast } from "react-toastify";
 import api from "../../api";
 import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
@@ -19,6 +20,7 @@ const TerminalComp = () => {
       });
       return data["result"];
     } catch (error) {
+      toast.error("Terminal command failed");
       return "Error executing command";
     }
   };

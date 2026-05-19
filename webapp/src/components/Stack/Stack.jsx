@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { DataState } from "./../../context/DataContext";
 import "./Stack.css";
+import { toast } from "react-toastify";
 import api from "../../api";
 
 const Stack = () => {
@@ -15,7 +16,7 @@ const Stack = () => {
       console.log(data.data.result);
       setStack(data.data.result);
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to fetch Stack trace data");
     }
   };
   useEffect(() => {
@@ -24,7 +25,6 @@ const Stack = () => {
   return (
     <div className="stack-parent">
       <div className="stack-heading">Stack</div>
-      Offset
       <div className="stack">
         <div>{stack}</div>
       </div>
