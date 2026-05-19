@@ -5,9 +5,9 @@ import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
 
 const TerminalComp = () => {
-  const { terminalOutput, commandPress } = DataState();
+  const { terminalOutput, commandCount } = DataState();
   const [output, setOutput] = useState("");
-  const terminalRef = useRef("null");
+  const terminalRef = useRef(null);
 
   const handleCommand = async (command, ...args) => {
     const fullCommand = [command, ...args].join(" ");
@@ -35,7 +35,7 @@ const TerminalComp = () => {
       console.log(terminalOutput);
       defaultHandler(terminalOutput);
     }
-  }, [commandPress]);
+  }, [commandCount]);
 
   return (
     <div className="terminal">
