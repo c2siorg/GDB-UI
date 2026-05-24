@@ -34,3 +34,14 @@ jobs:
         run: |
           cd webapp
           npx vitest --coverage.enabled true
+
+      - name: Run npm lint
+        continue-on-error: true
+        run: |
+          cd webapp
+          npm run lint
+
+      - name: Run npm build
+        run: |
+          cd webapp
+          npm run build
