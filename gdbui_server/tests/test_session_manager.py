@@ -270,6 +270,13 @@ class TestSessionManager(unittest.TestCase):
         self.assertIsNone(session['controller'])
         mock_controller.exit.assert_called_once()
 
+    def test_normalize_program_name(self):
+        from session_manager import normalize_program_name
+        self.assertEqual(normalize_program_name('hello.cpp'), 'hello')
+        self.assertEqual(normalize_program_name('foo.c'), 'foo')
+        self.assertEqual(normalize_program_name('bar.exe'), 'bar')
+        self.assertEqual(normalize_program_name('test'), 'test')
+
 
 if __name__ == '__main__':
     unittest.main()

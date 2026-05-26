@@ -168,7 +168,7 @@ def compile_code():
         if compile_success:
             session = session_manager._get_session(session_id)
             if session:
-                session['program'] = binary_name
+                session['program'] = safe_name
 
     return jsonify({
         'success': compile_success,
@@ -232,7 +232,7 @@ def upload_file():
         if upload_success:
             session = session_manager._get_session(session_id)
             if session:
-                session['program'] = binary_name
+                session['program'] = safe_name
 
     if upload_success:
         return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})

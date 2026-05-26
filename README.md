@@ -182,3 +182,8 @@ GDB-UI implements robust multi-user isolation to support multiple concurrent use
 - **Compiling Safely**: When compilation (`/compile`) or file upload (`/upload_file`) is requested, the server locks the session, checks if a debug session is active, and if so, blocks compilation and returns `409 Conflict`. Otherwise, it writes the file and runs the compiler cleanly, updating the program state.
 - **Error Resilience**: Malformed GDB Machine Interface (MI) tokens are caught by the `_parse_response` wrapper inside `SessionManager`, returning structured error payloads to the client without terminating the debug session.
 
+### Known Limitations
+
+- **BLOCKED_COMMANDS is not sufficient against expression injection**: The `BLOCKED_COMMANDS` set blocks shell-level commands (`shell`, `python`, `!`, etc.) but does NOT prevent malicious expressions from executing through GDB's expression evaluator. For example, `call system("rm -rf /")` is a valid GDB MI expression that bypasses the command-level blocklist. Full sandboxing requires Phase 3 Docker container isolation.
+- **Session ID as sole auth token**: The `session_id` UUID is the only authorization mechanism. This is acceptable for local or trusted-network deployments. Public internet exposure would require additional authentication (signed tokens, user accounts, or HTTPS + HttpOnly cookies).
+

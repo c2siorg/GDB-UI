@@ -40,6 +40,14 @@ def sanitize_program_name(name):
     return basename
 
 
+def normalize_program_name(name):
+    basename = sanitize_program_name(name)
+    for ext in ('.cpp', '.c', '.exe'):
+        if basename.lower().endswith(ext):
+            basename = basename[:-len(ext)]
+    return basename
+
+
 def validate_command(command):
     if not command or not command.strip():
         raise ValueError("Command cannot be empty")
@@ -88,11 +96,14 @@ class SessionManager:
                 return
             session = self.sessions.pop(session_id)
             lock = self.session_locks.pop(session_id, None)
-        if session['controller']:
+        if session and session['controller']:
             try:
                 session['controller'].exit()
             except Exception as e:
                 logger.warning("Failed to exit controller for expired session %s: %s", session_id, e)
+        if session:
+            shutil.rmtree(os.path.join('output', session_id), ignore_errors=True)
+            logger.info("Expired session cleaned up: %s", session_id)
 
     def create_session(self):
         with self.lock:
@@ -177,11 +188,11 @@ class SessionManager:
 
             controller = GdbController()
             try:
-                exe_path = os.path.join('output', session_id, ensure_exe_extension(safe_name))
+                binary_name = safe_name.replace('.cpp', '').replace('.c', '').replace('.exe', '')
+                exe_path = os.path.join('output', session_id, ensure_exe_extension(binary_name))
                 if not os.path.exists(exe_path):
                     raise RuntimeError(f"Binary not found at {exe_path}. Please compile your program first.")
                 controller.write(f"-file-exec-and-symbols {exe_path}", timeout_sec=GDB_TIMEOUT)
-                controller.write("run", timeout_sec=GDB_TIMEOUT)
             except Exception:
                 try:
                     controller.exit()
@@ -211,7 +222,7 @@ class SessionManager:
         try:
             return gdbmiparser.parse_response(raw_response)
         except Exception as e:
-            logger.error(f"pygdbmi parse error: {e}. Raw response: {raw_response!r}")
+            logger.error("pygdbmi parse error: %s. Raw response: %r", e, raw_response)
             return {
                 "type": "output",
                 "message": None,
@@ -238,7 +249,7 @@ class SessionManager:
             try:
                 controller.exit()
             except Exception as e:
-                logger.warning(f"Error exiting GDB for session {session_id}: {e}")
+                logger.warning("Error exiting GDB for session %s: %s", session_id, e)
 
     def execute(self, session_id, command):
         validate_command(command)
@@ -257,7 +268,7 @@ class SessionManager:
                 response = controller.write(command, timeout_sec=GDB_TIMEOUT)
                 self._touch(session_id)
             except Exception as e:
-                logger.error(f"pygdbmi write/parse error: {e}")
+                logger.error("pygdbmi write/parse error: %s", e)
                 err_payload = self._parse_response(f"Parser Error: {str(e)}")
                 response = [err_payload]
 
