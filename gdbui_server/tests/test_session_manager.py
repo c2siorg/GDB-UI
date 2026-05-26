@@ -48,8 +48,9 @@ class TestSessionManager(unittest.TestCase):
 
         sm.shutdown()
 
+    @patch('session_manager.os.path.exists', return_value=True)
     @patch('session_manager.GdbController')
-    def test_session_expiry(self, MockGdbController):
+    def test_session_expiry(self, MockGdbController, mock_exists):
         MockGdbController.return_value = self._make_mock_controller()
 
         sm = SessionManager(session_ttl=1)
@@ -76,8 +77,9 @@ class TestSessionManager(unittest.TestCase):
             sm.execute('nonexistent-uuid', 'info locals')
         self.assertIn('not found', str(ctx.exception))
 
+    @patch('session_manager.os.path.exists', return_value=True)
     @patch('session_manager.GdbController')
-    def test_end_session_cleanup(self, MockGdbController):
+    def test_end_session_cleanup(self, MockGdbController, mock_exists):
         mock_controller = self._make_mock_controller()
         MockGdbController.return_value = mock_controller
 
@@ -90,8 +92,9 @@ class TestSessionManager(unittest.TestCase):
         mock_controller.exit.assert_called()
         self.assertIsNone(sm.get_session(sid))
 
+    @patch('session_manager.os.path.exists', return_value=True)
     @patch('session_manager.GdbController')
-    def test_concurrent_requests(self, MockGdbController):
+    def test_concurrent_requests(self, MockGdbController, mock_exists):
         mock_controller = self._make_mock_controller()
         MockGdbController.return_value = mock_controller
 
@@ -208,8 +211,9 @@ class TestSessionManager(unittest.TestCase):
         with self.assertRaises(ValueError):
             SessionManager(session_ttl=-5)
 
+    @patch('session_manager.os.path.exists', return_value=True)
     @patch('session_manager.GdbController')
-    def test_controller_cleanup_on_write_failure(self, MockGdbController):
+    def test_controller_cleanup_on_write_failure(self, MockGdbController, mock_exists):
         controller = self._make_mock_controller()
         controller.write.side_effect = RuntimeError("GDB failed")
         MockGdbController.return_value = controller
@@ -234,6 +238,37 @@ class TestSessionManager(unittest.TestCase):
         expected_dir = os.path.join('output', session_id)
         self.assertTrue(os.path.exists(expected_dir))
         sm.end_session(session_id)
+
+    def test_parse_response_wrapper_success(self):
+        sm = SessionManager()
+        parsed = sm._parse_response('~"Hello World\\n"')
+        self.assertEqual(parsed, {'type': 'console', 'message': None, 'payload': 'Hello World\n'})
+
+    @patch('session_manager.gdbmiparser.parse_response')
+    def test_parse_response_wrapper_failure(self, mock_parse):
+        mock_parse.side_effect = ValueError("Some parser error")
+        sm = SessionManager()
+        parsed = sm._parse_response('invalid response')
+        self.assertEqual(parsed['type'], 'output')
+        self.assertIn('Parser Error: Some parser error', parsed['payload'])
+
+    @patch('session_manager.GdbController')
+    def test_stop_gdb(self, MockGdbController):
+        mock_controller = self._make_mock_controller()
+        MockGdbController.return_value = mock_controller
+
+        sm = SessionManager()
+        sid = sm.create_session()
+        with patch('session_manager.os.path.exists', return_value=True):
+            sm.start_gdb(sid, 'program')
+
+        session = sm._get_session(sid)
+        self.assertEqual(session['program'], 'program')
+
+        sm.stop_gdb(sid)
+        self.assertIsNone(session['program'])
+        self.assertIsNone(session['controller'])
+        mock_controller.exit.assert_called_once()
 
 
 if __name__ == '__main__':

@@ -18,6 +18,12 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 session_manager = SessionManager()
 atexit.register(session_manager.shutdown)
 
+# Log threading configuration warning
+logger.info("=" * 60)
+logger.info("GDB-UI Server Starting")
+logger.info("Ensure threaded=True (Flask dev) or gunicorn -w 1 --threads=N (prod)")
+logger.info("=" * 60)
+
 
 def handle_sigterm(signum, frame):
     session_manager.shutdown()
@@ -103,28 +109,72 @@ def compile_code():
     name = data.get('name')
     session_id = data.get('session_id')
 
+    if not session_id:
+        return jsonify({'success': False, 'error': 'session_id is required'}), 400
+
     if not code or not name:
-        return jsonify({'success': False, 'output': 'code and name are required'}), 400
+        return jsonify({'success': False, 'error': 'code and name are required'}), 400
 
     try:
         safe_name = sanitize_program_name(name)
     except ValueError as e:
-        return jsonify({'success': False, 'output': str(e)}), 400
+        return jsonify({'success': False, 'error': str(e)}), 400
 
-    session_output_dir = os.path.join('output', session_id)
-    os.makedirs(session_output_dir, exist_ok=True)
-    file_path = os.path.join(session_output_dir, ensure_exe_extension(name))
-    source_file = file_path.replace('.exe', '.cpp')
+    session_lock = session_manager._get_session_lock(session_id)
 
-    with open(source_file, 'w') as file:
-        file.write(code)
+    with session_lock:
+        # Phase 1: Validation under lock
+        session = session_manager._get_session(session_id)
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
 
-    result = subprocess.run(['g++', source_file, '-o', file_path], capture_output=True, text=True)
+        # Check if GDB is currently running a program
+        if session.get('program') is not None:
+            return jsonify({
+                'success': False,
+                'error': 'GDB is currently running a program. Please end the debug session before recompiling.'
+            }), 409
 
-    if result.returncode == 0:
-        return jsonify({'success': True, 'output': 'Compilation successful.'})
-    else:
-        return jsonify({'success': False, 'output': result.stderr})
+        # Determine paths
+        output_dir = os.path.join('output', session_id)
+        os.makedirs(output_dir, exist_ok=True)
+        binary_name = safe_name.replace('.cpp', '').replace('.c', '')
+        binary_path = os.path.join(output_dir, ensure_exe_extension(binary_name))
+        source_path = os.path.join(output_dir, safe_name)
+
+        # Write source file
+        with open(source_path, 'w') as f:
+            f.write(code)
+
+    # Phase 2: Compilation OUTSIDE lock (I/O bound, do not block session)
+    try:
+        result = subprocess.run(
+            ['g++', '-g', '-O0', source_path, '-o', binary_path],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        compile_output = result.stdout + result.stderr
+        compile_success = result.returncode == 0
+    except subprocess.TimeoutExpired:
+        compile_output = 'Compilation timed out'
+        compile_success = False
+    except Exception as e:
+        compile_output = f'Compilation error: {e}'
+        compile_success = False
+
+    # Phase 3: Update state under lock
+    with session_lock:
+        if compile_success:
+            session = session_manager._get_session(session_id)
+            if session:
+                session['program'] = binary_name
+
+    return jsonify({
+        'success': compile_success,
+        'output': compile_output,
+        'binary': binary_name if compile_success else None
+    })
 
 
 @app.route('/upload_file', methods=['POST'])
@@ -136,6 +186,9 @@ def upload_file():
     name = request.form['name']
     session_id = request.form.get('session_id')
 
+    if not session_id:
+        return jsonify({'success': False, 'error': 'session_id is required'}), 400
+
     if file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file'}), 400
 
@@ -144,12 +197,47 @@ def upload_file():
     except ValueError as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
-    session_output_dir = os.path.join('output', session_id)
-    os.makedirs(session_output_dir, exist_ok=True)
-    file_path = os.path.join(session_output_dir, ensure_exe_extension(name))
-    file.save(file_path)
+    session_lock = session_manager._get_session_lock(session_id)
 
-    return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})
+    with session_lock:
+        # Phase 1: Validation under lock
+        session = session_manager._get_session(session_id)
+        if not session:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+
+        # Check if GDB is currently running a program
+        if session.get('program') is not None:
+            return jsonify({
+                'success': False,
+                'error': 'GDB is currently running a program. Please end the debug session before uploading.'
+            }), 409
+
+        # Determine paths
+        output_dir = os.path.join('output', session_id)
+        os.makedirs(output_dir, exist_ok=True)
+        binary_name = safe_name.replace('.exe', '')
+        file_path = os.path.join(output_dir, ensure_exe_extension(safe_name))
+
+    # Phase 2: Save file OUTSIDE lock
+    try:
+        file.save(file_path)
+        upload_success = True
+        error_msg = None
+    except Exception as e:
+        upload_success = False
+        error_msg = str(e)
+
+    # Phase 3: Update state under lock
+    with session_lock:
+        if upload_success:
+            session = session_manager._get_session(session_id)
+            if session:
+                session['program'] = binary_name
+
+    if upload_success:
+        return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})
+    else:
+        return jsonify({'success': False, 'error': f'Failed to save file: {error_msg}'}), 500
 
 
 @app.route('/set_breakpoint', methods=['POST'])

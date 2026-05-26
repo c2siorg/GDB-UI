@@ -9,7 +9,13 @@ import { DataState } from "../../context/DataContext";
 const Breakpoint = () => {
   const [breakLine, setBreakLine] = useState("");
   const [breakFunction, setBreakFunction] = useState("");
-  const { sessionId, sessionLoading, sessionError } = DataState();
+  const {
+    sessionId,
+    sessionLoading,
+    sessionError,
+    createSession,
+    clearSessionError
+  } = DataState();
 
   const handleBreakSave = async (e) => {
     e.preventDefault();
@@ -36,11 +42,35 @@ const Breakpoint = () => {
   };
 
   if (sessionLoading) {
-    return <div className="breakpoint-container">Initializing session...</div>;
+    return (
+      <div className="breakpoint-container loading-container">
+        <div className="pulse-spinner"></div>
+        <p>Initializing debug session...</p>
+      </div>
+    );
   }
 
   if (sessionError) {
-    return <div className="breakpoint-container">Session error: {sessionError}</div>;
+    return (
+      <div className="breakpoint-container error-container">
+        <div className="error-banner">
+          <span className="error-icon">⚠️</span>
+          <p>{sessionError}</p>
+          <button onClick={() => { clearSessionError(); createSession(); }}>
+            Start New Session
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sessionId) {
+    return (
+      <div className="breakpoint-container error-container">
+        <p>No active session.</p>
+        <button className="save-button" onClick={createSession}>Start Debug Session</button>
+      </div>
+    );
   }
 
   return (

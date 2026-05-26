@@ -66,43 +66,70 @@ const DebugPanel = ({ label, isMockMode }) => {
                 sessionIdRef.current = data.session_id;
                 setLogs([{ type: "system", text: `Session created: ${data.session_id}` }]);
             } else {
-                setError("Failed to create session");
+                setError(data.error || "Failed to create session");
             }
         } catch (err) {
-            setError(err.message || "Failed to connect to backend");
+            const status = err.response?.status;
+            let message = "Failed to connect to backend";
+            if (status === 503) {
+                message = "Server capacity reached (MAX_SESSIONS - HTTP 503). Please try again later.";
+            } else if (status === 429) {
+                message = "Rate limited. Please wait before creating a new session.";
+            } else if (status === 404) {
+                message = "Session manager endpoint not found (HTTP 404).";
+            } else if (err.message) {
+                message = err.message;
+            }
+            setError(message);
         } finally {
             setLoading(false);
         }
     }, [isMockMode]);
 
-    const endSession = useCallback(async () => {
-        if (!sessionIdRef.current) return;
+    const endSession = useCallback(async (sid) => {
+        if (!sid) return;
         if (!isMockMode) {
             try {
-                await api.post("/end_session", { session_id: sessionIdRef.current });
+                await api.post("/end_session", { session_id: sid });
             } catch (e) { }
         }
-        sessionIdRef.current = null;
-        setSessionId(null);
+        if (sessionIdRef.current === sid) {
+            sessionIdRef.current = null;
+            setSessionId(null);
+        }
     }, [isMockMode]);
 
     useEffect(() => {
         createSession();
-        return () => { endSession(); };
-    }, [isMockMode]);
+        return () => {
+            const currentId = sessionIdRef.current;
+            if (currentId) {
+                endSession(currentId);
+            }
+        };
+    }, [isMockMode, createSession, endSession]);
 
     useEffect(() => {
         logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [logs]);
 
     const handleResetSession = async () => {
-        await endSession();
+        const currentId = sessionIdRef.current;
+        if (currentId) {
+            await endSession(currentId);
+        }
         await createSession();
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!command.trim() || !sessionId) return;
+        if (!command.trim()) return;
+
+        const currentId = sessionIdRef.current;
+        if (!currentId) {
+            setLogs((prev) => [...prev, { type: "error", text: "No active session." }]);
+            return;
+        }
 
         const cmd = command.trim();
         setCommand("");
@@ -119,12 +146,22 @@ const DebugPanel = ({ label, isMockMode }) => {
             const { data } = await api.post("/gdb_command", {
                 command: cmd,
                 name: "program",
-                session_id: sessionId,
+                session_id: currentId,
             });
             const text = data.success ? data.result : `Error: ${data.error}`;
             setLogs((prev) => [...prev, { type: "output", text }]);
         } catch (err) {
-            setLogs((prev) => [...prev, { type: "error", text: `Request failed: ${err.message}` }]);
+            const status = err.response?.status;
+            let errMsg = `Request failed: ${err.message}`;
+            if (status === 404) {
+                errMsg = "Session expired or not found. Please reset the session.";
+                setSessionId(null);
+                sessionIdRef.current = null;
+                setError("Session expired or not found. Please start a new debug session.");
+            } else if (status === 409) {
+                errMsg = "Conflict: GDB is currently running a program or compiler is busy.";
+            }
+            setLogs((prev) => [...prev, { type: "error", text: errMsg }]);
         }
     };
 
@@ -141,8 +178,23 @@ const DebugPanel = ({ label, isMockMode }) => {
                     Session: <span>{sessionId}</span>
                 </div>
             )}
-            {loading && <div className="demo-status demo-loading">Creating session...</div>}
-            {error && <div className="demo-status demo-error">{error}</div>}
+            
+            {loading && (
+                <div className="demo-status demo-loading">
+                    <div className="pulse-spinner" style={{ width: "20px", height: "20px" }}></div>
+                    <span>Creating session...</span>
+                </div>
+            )}
+            
+            {error && (
+                <div className="demo-status demo-error">
+                    <span className="error-icon">⚠️</span>
+                    <p>{error}</p>
+                    <button className="demo-recreate-btn" onClick={handleResetSession}>
+                        Recreate Session
+                    </button>
+                </div>
+            )}
 
             <div className="demo-logs">
                 {logs.map((log, i) => (

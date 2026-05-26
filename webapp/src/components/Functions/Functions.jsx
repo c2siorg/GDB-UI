@@ -4,7 +4,16 @@ import "./Functions.css";
 import { makeRequest } from "../../api";
 
 const Functions = () => {
-  const { refresh, functions, setFunctions, sessionId } = DataState();
+  const {
+    refresh,
+    functions,
+    setFunctions,
+    sessionId,
+    sessionLoading,
+    sessionError,
+    createSession,
+    clearSessionError
+  } = DataState();
 
   const fetchFunctionsData = async () => {
     try {
@@ -20,10 +29,42 @@ const Functions = () => {
   };
 
   useEffect(() => {
-    if (refresh) {
+    if (refresh && sessionId) {
       fetchFunctionsData();
     }
-  }, [refresh]);
+  }, [refresh, sessionId]);
+
+  if (sessionLoading) {
+    return (
+      <div className="functions-parent loading-container">
+        <div className="pulse-spinner"></div>
+        <p>Initializing debug session...</p>
+      </div>
+    );
+  }
+
+  if (sessionError) {
+    return (
+      <div className="functions-parent error-container">
+        <div className="error-banner">
+          <span className="error-icon">⚠️</span>
+          <p>{sessionError}</p>
+          <button onClick={() => { clearSessionError(); createSession(); }}>
+            Start New Session
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sessionId) {
+    return (
+      <div className="functions-parent error-container">
+        <p>No active session.</p>
+        <button className="save-button" onClick={createSession}>Start Debug Session</button>
+      </div>
+    );
+  }
 
   return (
     <div className="functions-parent">
@@ -31,7 +72,6 @@ const Functions = () => {
       offset
       <div className="functions">
         {functions}
-        {/* <a>sub.KERNEL32.dll_DeleteCritical_231</a> */}
       </div>
     </div>
   );

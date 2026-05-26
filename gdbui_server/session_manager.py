@@ -11,6 +11,7 @@ import re
 import shutil
 import logging
 from pygdbmi.gdbcontroller import GdbController
+import pygdbmi.gdbmiparser as gdbmiparser
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,11 @@ class SessionManager:
         self.lock = threading.Lock()
         self.session_ttl = session_ttl
         self._start_cleanup_thread()
+        logger.info(
+            "SessionManager initialized. IMPORTANT: Server must run in threaded/concurrent mode. "
+            "See README.md for deployment configuration. "
+            "Single-threaded servers will serialize all requests and defeat per-session isolation."
+        )
 
     def _start_cleanup_thread(self):
         thread = threading.Thread(target=self._cleanup_expired, daemon=True)
@@ -98,7 +104,9 @@ class SessionManager:
                 'program': None,
                 'last_active': time.time()
             }
-            self.session_locks[session_id] = threading.Lock()
+            self.session_locks[session_id] = threading.RLock()
+            # RLock required because ensure_program() calls start_gdb() under same session lock.
+            # TODO: Decouple nested lock acquisition in future refactor.
         logger.info("Session created: %s", session_id)
         return session_id
 
@@ -115,6 +123,10 @@ class SessionManager:
                 'program': session['program'],
                 'last_active': session['last_active'],
             }
+
+    def _get_session(self, session_id):
+        with self.lock:
+            return self.sessions.get(session_id)
 
     def _get_session_lock(self, session_id):
         with self.lock:
@@ -165,7 +177,7 @@ class SessionManager:
 
             controller = GdbController()
             try:
-                exe_path = os.path.join('output', ensure_exe_extension(safe_name))
+                exe_path = os.path.join('output', session_id, ensure_exe_extension(safe_name))
                 if not os.path.exists(exe_path):
                     raise RuntimeError(f"Binary not found at {exe_path}. Please compile your program first.")
                 controller.write(f"-file-exec-and-symbols {exe_path}", timeout_sec=GDB_TIMEOUT)
@@ -189,6 +201,45 @@ class SessionManager:
                 session['program'] = program
                 session['last_active'] = time.time()
 
+    def _parse_response(self, raw_response: str):
+        """Wrap pygdbmi parser with error resilience.
+
+        When GDB is in a bad state (infinite loop, segfault during execution),
+        pygdbmi returns malformed MI tokens. This wrapper catches parse errors
+        and returns a structured error payload without crashing the session.
+        """
+        try:
+            return gdbmiparser.parse_response(raw_response)
+        except Exception as e:
+            logger.error(f"pygdbmi parse error: {e}. Raw response: {raw_response!r}")
+            return {
+                "type": "output",
+                "message": None,
+                "payload": f"Parser Error: {e} (Raw response: {raw_response[:200]})",
+                "stream": "stdout"
+            }
+
+    def stop_gdb(self, session_id: str):
+        """Terminate the GDB controller for a session and reset program state.
+
+        Called before compilation when user explicitly ends debug session,
+        or during session cleanup.
+        """
+        with self.lock:
+            session = self.sessions.get(session_id)
+            if not session:
+                return
+
+            controller = session.get("controller")
+            session["controller"] = None
+            session["program"] = None
+
+        if controller:
+            try:
+                controller.exit()
+            except Exception as e:
+                logger.warning(f"Error exiting GDB for session {session_id}: {e}")
+
     def execute(self, session_id, command):
         validate_command(command)
         session_lock = self._get_session_lock(session_id)
@@ -202,8 +253,13 @@ class SessionManager:
                 if controller is None:
                     raise RuntimeError("GDB not started for this session")
 
-            response = controller.write(command, timeout_sec=GDB_TIMEOUT)
-            self._touch(session_id)
+            try:
+                response = controller.write(command, timeout_sec=GDB_TIMEOUT)
+                self._touch(session_id)
+            except Exception as e:
+                logger.error(f"pygdbmi write/parse error: {e}")
+                err_payload = self._parse_response(f"Parser Error: {str(e)}")
+                response = [err_payload]
 
         if response is None:
             raise RuntimeError("No response from GDB")
