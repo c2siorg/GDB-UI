@@ -15,7 +15,7 @@ const TerminalComp = () => {
     clearSessionError
   } = DataState();
   const [output, setOutput] = useState("");
-  const terminalRef = useRef("null");
+  const terminalRef = useRef(null);
 
   const handleCommand = async (command, ...args) => {
     const fullCommand = [command, ...args].join(" ");
@@ -43,7 +43,7 @@ const TerminalComp = () => {
       console.log(terminalOutput);
       defaultHandler(terminalOutput);
     }
-  }, [commandPress]);
+  }, [commandCount]);
 
   if (sessionLoading) {
     return (

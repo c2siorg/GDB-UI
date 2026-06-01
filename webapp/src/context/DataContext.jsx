@@ -20,7 +20,7 @@ export const DataProvider = ({ children }) => {
   const [infoBreakpointData, setInfoBreakpointData] = useState("");
   const [memoryMap, setMemoryMap] = useState("");
   const [terminalOutput, setTerminalOutput] = useState("");
-  const [commandPress, setCommandPress] = useState(true);
+  const [commandCount, setCommandCount] = useState(0);
 
   // Register session expiry interceptor handler
   useEffect(() => {
@@ -66,8 +66,8 @@ export const DataProvider = ({ children }) => {
         dark,
         setDark,
         terminalOutput,
-        setCommandPress,
-        commandPress,
+        setCommandCount,
+        commandCount,
         setTerminalOutput,
         sessionId: session.sessionId,
         sessionLoading: session.sessionLoading,

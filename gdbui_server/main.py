@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from session_manager import SessionManager, ensure_exe_extension, sanitize_program_name
 import subprocess
@@ -7,6 +7,7 @@ import atexit
 import signal
 import sys
 import logging
+import uuid
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,34 +30,118 @@ def handle_sigterm(signum, frame):
     session_manager.shutdown()
     sys.exit(0)
 
+
 signal.signal(signal.SIGTERM, handle_sigterm)
 
 os.makedirs('output', exist_ok=True)
 
 
+# ---------------------------------------------------------------------------
+# v2 API infrastructure (trace_id, structured responses, required-field validation)
+# ---------------------------------------------------------------------------
+
+@app.before_request
+def assign_trace_id():
+    g.trace_id = str(uuid.uuid4())
+
+
+def is_v2_request():
+    return request.path.startswith('/v2/')
+
+
+def json_response(payload, status_code=200):
+    response = jsonify(payload)
+    response.headers['X-Correlation-ID'] = g.trace_id
+    return response, status_code
+
+
+def error_response(message, status_code=500, code='REQUEST_FAILED', exc=None, legacy_field='error'):
+    if exc is not None:
+        app.logger.error("%s [%s]", message, code, exc_info=True)
+
+    if is_v2_request():
+        return json_response({
+            'success': False,
+            'error': {
+                'code': code,
+                'message': message,
+                'trace_id': g.trace_id,
+            }
+        }, status_code)
+
+    payload = {
+        'success': False,
+        legacy_field: message,
+        'trace_id': g.trace_id,
+    }
+    return json_response(payload, status_code)
+
+
+def success_response(data):
+    if is_v2_request():
+        return json_response({'success': True, 'data': data})
+    return json_response({'success': True, **data})
+
+
+def request_data():
+    return request.get_json(silent=True) or {}
+
+
+def validate_v2_required_fields(data, required_fields):
+    if not is_v2_request():
+        return None
+
+    missing_fields = []
+    for field in required_fields:
+        value = data.get(field)
+        if value is None or (isinstance(value, str) and value.strip() == ''):
+            missing_fields.append(field)
+
+    if not missing_fields:
+        return None
+
+    return error_response(
+        f"Missing required fields: {', '.join(missing_fields)}.",
+        status_code=400,
+        code='INVALID_REQUEST',
+    )
+
+
+def v2_route(path):
+    return app.route(f'/v2{path}', methods=['POST'])
+
+
+# ---------------------------------------------------------------------------
+# Request helpers (session-aware)
+# ---------------------------------------------------------------------------
+
 def get_request_data():
     data = request.get_json(silent=True)
     if data is None:
-        return None, (jsonify({'success': False, 'error': 'Invalid or missing JSON body'}), 400)
+        return None, error_response('Invalid or missing JSON body', status_code=400, code='INVALID_REQUEST')
     return data, None
 
 
 def get_session_id(data):
     session_id = data.get('session_id')
     if not session_id:
-        return None, (jsonify({'success': False, 'error': 'session_id is required'}), 400)
+        return None, error_response('session_id is required', status_code=400, code='INVALID_REQUEST')
     if not session_manager.session_exists(session_id):
-        return None, (jsonify({'success': False, 'error': f'Session {session_id} not found'}), 404)
+        return None, error_response(f'Session {session_id} not found', status_code=404, code='SESSION_NOT_FOUND')
     return session_id, None
 
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
 
 @app.route('/create_session', methods=['POST'])
 def create_session():
     try:
         session_id = session_manager.create_session()
-        return jsonify({'success': True, 'session_id': session_id})
+        return success_response({'session_id': session_id})
     except RuntimeError as e:
-        return jsonify({'success': False, 'error': str(e)}), 503
+        return error_response(str(e), status_code=503, code='MAX_SESSIONS_REACHED')
 
 
 @app.route('/end_session', methods=['POST'])
@@ -66,11 +151,12 @@ def end_session():
         return err
     session_id = data.get('session_id')
     if not session_id:
-        return jsonify({'success': False, 'error': 'session_id is required'}), 400
+        return error_response('session_id is required', status_code=400, code='INVALID_REQUEST')
     session_manager.end_session(session_id)
-    return jsonify({'success': True})
+    return success_response({})
 
 
+@v2_route('/gdb_command')
 @app.route('/gdb_command', methods=['POST'])
 def gdb_command():
     data, err = get_request_data()
@@ -82,24 +168,19 @@ def gdb_command():
     command = data.get('command')
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['command', 'name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, command)
-        response = {
-            'success': True,
-            'result': result,
-            'code': f"execute_gdb_command('{command}')"
-        }
+        return success_response({'result': result, 'code': f"execute_gdb_command('{command}')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('{command}')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/compile')
 @app.route('/compile', methods=['POST'])
 def compile_code():
     data, err = get_request_data()
@@ -110,33 +191,38 @@ def compile_code():
     session_id = data.get('session_id')
 
     if not session_id:
-        return jsonify({'success': False, 'error': 'session_id is required'}), 400
+        return error_response('session_id is required', status_code=400, code='INVALID_REQUEST')
 
     if not code or not name:
-        return jsonify({'success': False, 'error': 'code and name are required'}), 400
+        return error_response('code and name are required', status_code=400, code='INVALID_REQUEST')
+
+    validation_error = validate_v2_required_fields(data, ['code', 'name'])
+    if validation_error:
+        return validation_error
 
     try:
         safe_name = sanitize_program_name(name)
     except ValueError as e:
-        return jsonify({'success': False, 'error': str(e)}), 400
+        return error_response(str(e), status_code=400, code='INVALID_PROGRAM_NAME')
 
     try:
         session_lock = session_manager._get_session_lock(session_id)
     except RuntimeError:
-        return jsonify({'success': False, 'error': f'Session {session_id} not found'}), 404
+        return error_response(f'Session {session_id} not found', status_code=404, code='SESSION_NOT_FOUND')
 
     with session_lock:
         # Phase 1: Validation under lock
         session = session_manager._get_session(session_id)
         if not session:
-            return jsonify({'success': False, 'error': 'Session not found'}), 404
+            return error_response('Session not found', status_code=404, code='SESSION_NOT_FOUND')
 
         # Check if GDB is currently running
         if session.get('controller') is not None:
-            return jsonify({
-                'success': False,
-                'error': 'GDB is currently running a program. Please end the debug session before recompiling.'
-            }), 409
+            return error_response(
+                'GDB is currently running a program. Please end the debug session before recompiling.',
+                status_code=409,
+                code='GDB_ACTIVE'
+            )
 
         # Determine paths
         output_dir = os.path.join('output', session_id)
@@ -178,50 +264,54 @@ def compile_code():
             if session:
                 session['compiled_binary'] = safe_name
 
-    return jsonify({
-        'success': compile_success,
-        'output': compile_output,
-        'binary': binary_name if compile_success else None
-    })
+    if compile_success:
+        return success_response({
+            'output': compile_output,
+            'binary': binary_name
+        })
+    else:
+        return error_response(compile_output, status_code=400, code='COMPILATION_FAILED', legacy_field='output')
 
 
+@v2_route('/upload_file')
 @app.route('/upload_file', methods=['POST'])
 def upload_file():
     if 'file' not in request.files or 'name' not in request.form:
-        return jsonify({'success': False, 'error': 'No file or name provided'}), 400
+        return error_response('No file or name provided', status_code=400, code='INVALID_UPLOAD')
 
     file = request.files['file']
     name = request.form['name']
     session_id = request.form.get('session_id')
 
     if not session_id:
-        return jsonify({'success': False, 'error': 'session_id is required'}), 400
+        return error_response('session_id is required', status_code=400, code='INVALID_REQUEST')
 
     if file.filename == '':
-        return jsonify({'success': False, 'error': 'No selected file'}), 400
+        return error_response('No selected file', status_code=400, code='INVALID_UPLOAD')
 
     try:
         safe_name = sanitize_program_name(name)
     except ValueError as e:
-        return jsonify({'success': False, 'error': str(e)}), 400
+        return error_response(str(e), status_code=400, code='INVALID_PROGRAM_NAME')
 
     try:
         session_lock = session_manager._get_session_lock(session_id)
     except RuntimeError:
-        return jsonify({'success': False, 'error': f'Session {session_id} not found'}), 404
+        return error_response(f'Session {session_id} not found', status_code=404, code='SESSION_NOT_FOUND')
 
     with session_lock:
         # Phase 1: Validation under lock
         session = session_manager._get_session(session_id)
         if not session:
-            return jsonify({'success': False, 'error': 'Session not found'}), 404
+            return error_response('Session not found', status_code=404, code='SESSION_NOT_FOUND')
 
         # Check if GDB is currently running
         if session.get('controller') is not None:
-            return jsonify({
-                'success': False,
-                'error': 'GDB is currently running a program. Please end the debug session before uploading.'
-            }), 409
+            return error_response(
+                'GDB is currently running a program. Please end the debug session before uploading.',
+                status_code=409,
+                code='GDB_ACTIVE'
+            )
 
         # Determine paths
         output_dir = os.path.join('output', session_id)
@@ -246,11 +336,12 @@ def upload_file():
                 session['compiled_binary'] = safe_name
 
     if upload_success:
-        return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})
+        return success_response({'message': 'File uploaded successfully', 'file_path': file_path})
     else:
-        return jsonify({'success': False, 'error': f'Failed to save file: {error_msg}'}), 500
+        return error_response(f'Failed to save file: {error_msg}', status_code=500, code='UPLOAD_FAILED')
 
 
+@v2_route('/set_breakpoint')
 @app.route('/set_breakpoint', methods=['POST'])
 def set_breakpoint():
     data, err = get_request_data()
@@ -262,24 +353,19 @@ def set_breakpoint():
     location = data.get('location')
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['location', 'name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, f"break {location}")
-        response = {
-            'success': True,
-            'result': result,
-            'code': f"execute_gdb_command('break {location}')"
-        }
+        return success_response({'result': result, 'code': f"execute_gdb_command('break {location}')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('break {location}')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/info_breakpoints')
 @app.route('/info_breakpoints', methods=['POST'])
 def info_breakpoints():
     data, err = get_request_data()
@@ -290,24 +376,19 @@ def info_breakpoints():
         return error
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "info breakpoints")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info breakpoints')"
-        }
+        return success_response({'result': result, 'code': "execute_gdb_command('info breakpoints')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info breakpoints')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/stack_trace')
 @app.route('/stack_trace', methods=['POST'])
 def stack_trace():
     data, err = get_request_data()
@@ -318,24 +399,19 @@ def stack_trace():
         return error
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "bt")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('bt')"
-        }
+        return success_response({'result': result, 'code': "execute_gdb_command('bt')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('bt')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/threads')
 @app.route('/threads', methods=['POST'])
 def threads():
     data, err = get_request_data()
@@ -346,24 +422,19 @@ def threads():
         return error
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "info threads")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info threads')"
-        }
+        return success_response({'result': result, 'code': "execute_gdb_command('info threads')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info threads')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/get_registers')
 @app.route('/get_registers', methods=['POST'])
 def get_registers():
     data, err = get_request_data()
@@ -374,24 +445,19 @@ def get_registers():
         return error
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "info registers")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info registers')"
-        }
+        return success_response({'result': result, 'code': "execute_gdb_command('info registers')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info registers')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/get_locals')
 @app.route('/get_locals', methods=['POST'])
 def get_locals():
     data, err = get_request_data()
@@ -402,24 +468,19 @@ def get_locals():
         return error
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "info functions")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info functions')"
-        }
+        return success_response({'result': result, 'code': "execute_gdb_command('info functions')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info functions')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/run')
 @app.route('/run', methods=['POST'])
 def run_program():
     data, err = get_request_data()
@@ -430,24 +491,19 @@ def run_program():
         return error
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "run")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('run')"
-        }
+        return success_response({'result': result, 'code': "execute_gdb_command('run')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('run')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/memory_map')
 @app.route('/memory_map', methods=['POST'])
 def memory_map():
     data, err = get_request_data()
@@ -458,24 +514,19 @@ def memory_map():
         return error
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "info proc mappings")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('info proc mappings')"
-        }
+        return success_response({'result': result, 'code': "execute_gdb_command('info proc mappings')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('info proc mappings')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/continue')
 @app.route('/continue', methods=['POST'])
 def continue_execution():
     data, err = get_request_data()
@@ -486,24 +537,19 @@ def continue_execution():
         return error
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "continue")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('continue')"
-        }
+        return success_response({'result': result, 'code': "execute_gdb_command('continue')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('continue')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/step_over')
 @app.route('/step_over', methods=['POST'])
 def step_over():
     data, err = get_request_data()
@@ -514,24 +560,19 @@ def step_over():
         return error
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "next")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('next')"
-        }
+        return success_response({'result': result, 'code': "execute_gdb_command('next')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('next')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/step_into')
 @app.route('/step_into', methods=['POST'])
 def step_into():
     data, err = get_request_data()
@@ -542,24 +583,19 @@ def step_into():
         return error
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "step")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('step')"
-        }
+        return success_response({'result': result, 'code': "execute_gdb_command('step')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('step')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/step_out')
 @app.route('/step_out', methods=['POST'])
 def step_out():
     data, err = get_request_data()
@@ -570,24 +606,19 @@ def step_out():
         return error
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "finish")
-        response = {
-            'success': True,
-            'result': result,
-            'code': "execute_gdb_command('finish')"
-        }
+        return success_response({'result': result, 'code': "execute_gdb_command('finish')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': "execute_gdb_command('finish')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/add_watchpoint')
 @app.route('/add_watchpoint', methods=['POST'])
 def add_watchpoint():
     data, err = get_request_data()
@@ -599,24 +630,19 @@ def add_watchpoint():
     variable = data.get('variable')
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['variable', 'name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, f"watch {variable}")
-        response = {
-            'success': True,
-            'result': result,
-            'code': f"execute_gdb_command('watch {variable}')"
-        }
+        return success_response({'result': result, 'code': f"execute_gdb_command('watch {variable}')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('watch {variable}')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
+@v2_route('/delete_breakpoint')
 @app.route('/delete_breakpoint', methods=['POST'])
 def delete_breakpoint():
     data, err = get_request_data()
@@ -628,22 +654,16 @@ def delete_breakpoint():
     breakpoint_number = data.get('breakpoint_number')
     file = data.get('name')
 
+    validation_error = validate_v2_required_fields(data, ['breakpoint_number', 'name'])
+    if validation_error:
+        return validation_error
+
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, f"delete {breakpoint_number}")
-        response = {
-            'success': True,
-            'result': result,
-            'code': f"execute_gdb_command('delete {breakpoint_number}')"
-        }
+        return success_response({'result': result, 'code': f"execute_gdb_command('delete {breakpoint_number}')"})
     except Exception as e:
-        response = {
-            'success': False,
-            'error': str(e),
-            'code': f"execute_gdb_command('delete {breakpoint_number}')"
-        }
-
-    return jsonify(response)
+        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
 
 
 if __name__ == '__main__':
