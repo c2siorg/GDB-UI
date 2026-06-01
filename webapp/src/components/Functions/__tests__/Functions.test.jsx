@@ -8,6 +8,11 @@ vi.mock("../../../context/DataContext.jsx", () => ({
     refresh: false,
     functions: [],
     setFunctions: vi.fn(),
+    sessionId: 'test-session-123',
+    sessionLoading: false,
+    sessionError: null,
+    createSession: vi.fn(),
+    clearSessionError: vi.fn(),
   }),
 }));
 

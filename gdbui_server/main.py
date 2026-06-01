@@ -175,9 +175,9 @@ def gdb_command():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, command)
-        return success_response({'result': result, 'code': f"execute_gdb_command('{command}')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/compile')
@@ -193,12 +193,12 @@ def compile_code():
     if not session_id:
         return error_response('session_id is required', status_code=400, code='INVALID_REQUEST')
 
-    if not code or not name:
-        return error_response('code and name are required', status_code=400, code='INVALID_REQUEST')
-
     validation_error = validate_v2_required_fields(data, ['code', 'name'])
     if validation_error:
         return validation_error
+
+    if not code or not name:
+        return error_response('code and name are required', status_code=400, code='INVALID_REQUEST')
 
     try:
         safe_name = sanitize_program_name(name)
@@ -360,9 +360,9 @@ def set_breakpoint():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, f"break {location}")
-        return success_response({'result': result, 'code': f"execute_gdb_command('break {location}')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/info_breakpoints')
@@ -383,9 +383,9 @@ def info_breakpoints():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "info breakpoints")
-        return success_response({'result': result, 'code': "execute_gdb_command('info breakpoints')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/stack_trace')
@@ -406,9 +406,9 @@ def stack_trace():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "bt")
-        return success_response({'result': result, 'code': "execute_gdb_command('bt')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/threads')
@@ -429,9 +429,9 @@ def threads():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "info threads")
-        return success_response({'result': result, 'code': "execute_gdb_command('info threads')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/get_registers')
@@ -452,9 +452,9 @@ def get_registers():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "info registers")
-        return success_response({'result': result, 'code': "execute_gdb_command('info registers')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/get_locals')
@@ -475,9 +475,9 @@ def get_locals():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "info functions")
-        return success_response({'result': result, 'code': "execute_gdb_command('info functions')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/run')
@@ -498,9 +498,9 @@ def run_program():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "run")
-        return success_response({'result': result, 'code': "execute_gdb_command('run')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/memory_map')
@@ -521,9 +521,9 @@ def memory_map():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "info proc mappings")
-        return success_response({'result': result, 'code': "execute_gdb_command('info proc mappings')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/continue')
@@ -544,9 +544,9 @@ def continue_execution():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "continue")
-        return success_response({'result': result, 'code': "execute_gdb_command('continue')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/step_over')
@@ -567,9 +567,9 @@ def step_over():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "next")
-        return success_response({'result': result, 'code': "execute_gdb_command('next')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/step_into')
@@ -590,9 +590,9 @@ def step_into():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "step")
-        return success_response({'result': result, 'code': "execute_gdb_command('step')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/step_out')
@@ -613,9 +613,9 @@ def step_out():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, "finish")
-        return success_response({'result': result, 'code': "execute_gdb_command('finish')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/add_watchpoint')
@@ -637,9 +637,9 @@ def add_watchpoint():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, f"watch {variable}")
-        return success_response({'result': result, 'code': f"execute_gdb_command('watch {variable}')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 @v2_route('/delete_breakpoint')
@@ -661,9 +661,9 @@ def delete_breakpoint():
     try:
         session_manager.ensure_program(session_id, file)
         result = session_manager.execute(session_id, f"delete {breakpoint_number}")
-        return success_response({'result': result, 'code': f"execute_gdb_command('delete {breakpoint_number}')"})
+        return success_response({'result': result})
     except Exception as e:
-        return error_response(str(e), code='GDB_COMMAND_FAILED', exc=e)
+        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
 if __name__ == '__main__':

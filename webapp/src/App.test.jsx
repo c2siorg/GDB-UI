@@ -3,6 +3,19 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import App from "./App.jsx";
 import { DataProvider } from "./context/DataContext"; // Import the DataProvider
+import { vi } from "vitest";
+
+vi.mock("./hooks/useSession", () => ({
+  default: () => ({
+    sessionId: "test-session-123",
+    sessionLoading: false,
+    sessionError: null,
+    createSession: vi.fn(),
+    endSession: vi.fn(),
+    handleSessionError: vi.fn(),
+    clearSessionError: vi.fn(),
+  }),
+}));
 
 test("renders Footer component", () => {
   render(
@@ -25,8 +38,8 @@ test("renders Threads component within Debug route", () => {
       </DataProvider>
     </MemoryRouter>
   );
-  const threadsComponent = screen.getByText(/Threads/i);
-  expect(threadsComponent).toBeInTheDocument();
+  const threadsComponents = screen.getAllByText(/Threads/i);
+  expect(threadsComponents.length).toBeGreaterThan(0);
   // Add any other checks specific to the Threads component
 });
 

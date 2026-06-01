@@ -8,6 +8,7 @@ const TerminalComp = () => {
   const {
     terminalOutput,
     commandPress,
+    commandCount,
     sessionId,
     sessionLoading,
     sessionError,
