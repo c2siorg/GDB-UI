@@ -218,6 +218,113 @@ We welcome contributions from the community! To get started:
 https://www.figma.com/proto/flJ4HBaH4QhF18RSKGOWwA/GDB-UI?type=design&node-id=111-1101&t=sDAc1dWc1LAfqpaT-0&scaling=min-zoom&page-id=0%3A1&starting-point-node-id=111%3A2956
 
 
+## Architecture
+
+### Before — Global State (Legacy)
+
+```
+User A ──► POST /gdb_command
+                  │
+User B ──► POST /gdb_command
+                  │
+                  ▼
+         ┌────────────────┐
+         │  global state  │  (shared — one GDB for everyone)
+         │   gdb_ctrl     │
+         │   program_name │
+         └───────┬────────┘
+                 │
+                 ▼
+         ┌────────────────┐
+         │  one GDB proc  │  ← User B's request kills User A's session
+         └────────────────┘
+```
+
+*Problem:* Requests from multiple users overwrite the shared controller.
+The second user's `start_gdb_session()` silently kills the first user's GDB process.
+
+### After — Per-Session Isolation
+
+```
+User A ──► POST /create_session ──► abc-123
+User B ──► POST /create_session ──► def-456
+
+┌────────────────────────────────────────────────────┐
+│  SessionManager (in-memory dict)                    │
+│                                                     │
+│  sessions["abc-123"]   sessions["def-456"]          │
+│  ┌─────────────────┐   ┌─────────────────┐          │
+│  │ session_lock     │   │ session_lock     │          │
+│  │ (threading.RLock)│   │ (threading.RLock)│          │
+│  │ controller: GDB  │   │ controller: GDB  │          │
+│  │ program: "progA" │   │ program: "progB" │          │
+│  │ output/abc-123/  │   │ output/def-456/  │          │
+│  └────────┬────────┘   └────────┬────────┘          │
+│           │                     │                    │
+│  Global lock (dict mutations only — microseconds)    │
+│  Per-session lock (GDB I/O — milliseconds/seconds)   │
+│  controller.write() NEVER called under global lock   │
+└────────────────────────────────────────────────────┘
+           │                     │
+           ▼                     ▼
+   ┌────────────────┐   ┌────────────────┐
+   │  GDB proc A    │   │  GDB proc B    │
+   │  (isolated)    │   │  (isolated)    │
+   └────────────────┘   └────────────────┘
+```
+
+### Locking Strategy
+
+```
+Request A (thread 1)                 Request B (thread 2)
+        │                                   │
+        ▼                                   ▼
+┌──────────────────────┐          ┌──────────────────────┐
+│  global lock         │          │  global lock          │
+│  (acquire, micros)   │          │  (acquire, micros)    │
+│  sessions[sid] lookup│          │  sessions[sid] lookup │
+│  (release)           │          │  (release)            │
+│  ✓ dict safe         │          │  ✓ dict safe          │
+└──────────────────────┘          └──────────────────────┘
+        │                                   │
+        ▼                                   ▼
+┌──────────────────────┐          ┌──────────────────────┐
+│  session_lock A      │          │  session_lock B      │
+│  (acquire, RLock)    │          │  (acquire, RLock)    │
+│  controller.write()  │          │  controller.write()  │
+│  (release)           │          │  (release)           │
+│  ✓ GDB I/O serialized│          │  ✓ GDB I/O serialized│
+└──────────────────────┘          └──────────────────────┘
+        │                                   │
+        ▼                                   ▼
+   ┌──────────┐                      ┌──────────┐
+   │ GDB A    │                      │ GDB B    │
+   └──────────┘                      └──────────┘
+```
+
+*Two sessions proceed in parallel because global lock is only held for dict lookups
+(microseconds). GDB I/O under per-session locks never collides.*
+
+### File Isolation
+
+```
+output/
+├── abc-123/          ← User A
+│   ├── progA         (binary)
+│   ├── progA.cpp     (source)
+│   └── progA.exe     (Windows binary)
+│
+└── def-456/          ← User B
+    ├── progB
+    ├── progB.cpp
+    └── progB.exe
+```
+
+*Each session's output directory is created on first use. TTL cleanup or
+manual `end_session` removes the entire directory. No cross-session
+filesystem access is possible.*
+
+
 ## Deployment Requirements
 
 For development and production, GDB-UI's session manager requires concurrent/threaded execution. Single-threaded configurations will serialize all requests and defeat the per-session GDB isolation mechanism.

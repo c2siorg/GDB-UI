@@ -46,6 +46,7 @@ export const DataProvider = ({ children }) => {
 
   const runCommandInTerminal = (command) => {
     setTerminalOutput(command);
+    setCommandCount((prev) => prev + 1);
   };
 
   return (
@@ -68,6 +69,7 @@ export const DataProvider = ({ children }) => {
         terminalOutput,
         setCommandCount,
         commandCount,
+        runCommandInTerminal,
         setTerminalOutput,
         sessionId: session.sessionId,
         sessionLoading: session.sessionLoading,
