@@ -29,6 +29,10 @@ except Exception:
         pass
 
 
+@unittest.skipUnless(
+    os.getenv('RUN_REAL_GDB_TESTS') == '1',
+    'Set RUN_REAL_GDB_TESTS=1 to run integration tests (requires Flask server + gdb + g++)'
+)
 class TestRealGDBIntegration(unittest.TestCase):
 
     @classmethod

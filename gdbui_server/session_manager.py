@@ -113,6 +113,8 @@ class SessionManager:
             self.sessions[session_id] = {
                 'controller': None,
                 'program': None,
+                'compiled_binary': None,
+                'compiling': False,
                 'last_active': time.time()
             }
             self.session_locks[session_id] = threading.RLock()
@@ -164,8 +166,21 @@ class SessionManager:
             shutil.rmtree(os.path.join('output', session_id), ignore_errors=True)
             logger.info("Session ended: %s", session_id)
 
+    def set_compiling(self, session_id: str, is_compiling: bool):
+        with self.lock:
+            session = self.sessions.get(session_id)
+            if session:
+                session['compiling'] = is_compiling
+
+    def is_compiling(self, session_id: str) -> bool:
+        with self.lock:
+            session = self.sessions.get(session_id)
+            return session.get('compiling', False) if session else False
+
     def start_gdb(self, session_id, program):
         safe_name = sanitize_program_name(program)
+        if self.is_compiling(session_id):
+            raise RuntimeError("Compilation in progress. Please wait.")
         session_lock = self._get_session_lock(session_id)
 
         with session_lock:

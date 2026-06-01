@@ -81,7 +81,7 @@ const MemoryMap = () => {
           ? memoryMap
           : data?.length > 0
             ? data.map((obj, i) => {
-              return <a key={i}>{obj}</a>;
+              return <div key={i}>{obj}</div>;
             })
             : ""}
       </div>

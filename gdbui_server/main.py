@@ -120,7 +120,10 @@ def compile_code():
     except ValueError as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
-    session_lock = session_manager._get_session_lock(session_id)
+    try:
+        session_lock = session_manager._get_session_lock(session_id)
+    except RuntimeError:
+        return jsonify({'success': False, 'error': f'Session {session_id} not found'}), 404
 
     with session_lock:
         # Phase 1: Validation under lock
@@ -128,8 +131,8 @@ def compile_code():
         if not session:
             return jsonify({'success': False, 'error': 'Session not found'}), 404
 
-        # Check if GDB is currently running a program
-        if session.get('program') is not None:
+        # Check if GDB is currently running
+        if session.get('controller') is not None:
             return jsonify({
                 'success': False,
                 'error': 'GDB is currently running a program. Please end the debug session before recompiling.'
@@ -146,29 +149,34 @@ def compile_code():
         with open(source_path, 'w') as f:
             f.write(code)
 
+        session_manager.set_compiling(session_id, True)
+
     # Phase 2: Compilation OUTSIDE lock (I/O bound, do not block session)
     try:
-        result = subprocess.run(
-            ['g++', '-g', '-O0', source_path, '-o', binary_path],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        compile_output = result.stdout + result.stderr
-        compile_success = result.returncode == 0
-    except subprocess.TimeoutExpired:
-        compile_output = 'Compilation timed out'
-        compile_success = False
-    except Exception as e:
-        compile_output = f'Compilation error: {e}'
-        compile_success = False
+        try:
+            result = subprocess.run(
+                ['g++', '-g', '-O0', source_path, '-o', binary_path],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            compile_output = result.stdout + result.stderr
+            compile_success = result.returncode == 0
+        except subprocess.TimeoutExpired:
+            compile_output = 'Compilation timed out'
+            compile_success = False
+        except Exception as e:
+            compile_output = f'Compilation error: {e}'
+            compile_success = False
+    finally:
+        session_manager.set_compiling(session_id, False)
 
     # Phase 3: Update state under lock
     with session_lock:
         if compile_success:
             session = session_manager._get_session(session_id)
             if session:
-                session['program'] = safe_name
+                session['compiled_binary'] = safe_name
 
     return jsonify({
         'success': compile_success,
@@ -197,7 +205,10 @@ def upload_file():
     except ValueError as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
-    session_lock = session_manager._get_session_lock(session_id)
+    try:
+        session_lock = session_manager._get_session_lock(session_id)
+    except RuntimeError:
+        return jsonify({'success': False, 'error': f'Session {session_id} not found'}), 404
 
     with session_lock:
         # Phase 1: Validation under lock
@@ -205,8 +216,8 @@ def upload_file():
         if not session:
             return jsonify({'success': False, 'error': 'Session not found'}), 404
 
-        # Check if GDB is currently running a program
-        if session.get('program') is not None:
+        # Check if GDB is currently running
+        if session.get('controller') is not None:
             return jsonify({
                 'success': False,
                 'error': 'GDB is currently running a program. Please end the debug session before uploading.'
@@ -232,7 +243,7 @@ def upload_file():
         if upload_success:
             session = session_manager._get_session(session_id)
             if session:
-                session['program'] = safe_name
+                session['compiled_binary'] = safe_name
 
     if upload_success:
         return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_path': file_path})

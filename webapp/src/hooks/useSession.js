@@ -13,14 +13,17 @@ export const useSession = () => {
 
   const createSession = useCallback(async () => {
     try {
+      if (!isMounted.current) return;
       setSessionLoading(true);
       setSessionError(null);
       const response = await axios.post(`${API_BASE}/create_session`);
       const sid = response.data.session_id;
+      if (!isMounted.current) return;
       setSessionId(sid);
       sessionIdRef.current = sid;
       setSessionIdForApi(sid);
     } catch (error) {
+      if (!isMounted.current) return;
       const status = error.response?.status;
       let message = "Failed to create session";
       if (status === 503) {
@@ -35,17 +38,26 @@ export const useSession = () => {
       sessionIdRef.current = null;
       setSessionIdForApi(null);
     } finally {
-      setSessionLoading(false);
+      if (isMounted.current) {
+        setSessionLoading(false);
+      }
     }
   }, []);
 
   const endSession = useCallback(async (sid) => {
     if (!sid) return;
+    const isCurrentSession = sessionIdRef.current === sid;
     try {
       await axios.post(`${API_BASE}/end_session`, { session_id: sid });
     } catch (error) {
       // Session may have already expired -- that is fine
       console.log(`Session ${sid} cleanup:`, error.message);
+    } finally {
+      if (isCurrentSession) {
+        setSessionId(null);
+        sessionIdRef.current = null;
+        setSessionIdForApi(null);
+      }
     }
   }, []);
 
