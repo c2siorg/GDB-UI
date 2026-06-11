@@ -38,3 +38,4 @@ jobs:
       - name: Run tests on changes
         run: |
           python -m unittest discover -s gdbui_server -p 'flask_test.py'
+          python -m unittest discover -s gdbui_server/tests -p 'test_*.py'

@@ -1,8 +1,7 @@
 import React, { useEffect } from "react";
 import { DataState } from "./../../../context/DataContext";
-
 import "./MemoryMap.css";
-import api from "../../../api";
+import { makeRequest } from "../../../api";
 
 const data = [
   "0x7fffffffe270: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00",
@@ -14,21 +13,65 @@ const data = [
   "0x7fffffffe270: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00",
   "0x7fffffffe270: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00",
 ];
+
 const MemoryMap = () => {
-  const { refresh, memoryMap, setMemoryMap } = DataState();
+  const {
+    refresh,
+    memoryMap,
+    setMemoryMap,
+    sessionId,
+    sessionLoading,
+    sessionError,
+    createSession,
+    clearSessionError
+  } = DataState();
 
   const fetchMemoryMap = async () => {
-    console.log("Click form memory map");
-    const data = await api.post("/memory_map", {
-      name: "program",
-    });
-    console.log(data.data.result);
-    setMemoryMap(data.data.result);
+    try {
+      const response = await makeRequest("/memory_map", {
+        name: "program",
+      }, sessionId);
+      setMemoryMap(response.data.result);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   useEffect(() => {
-    if (refresh) fetchMemoryMap();
-  }, [refresh]);
+    if (refresh && sessionId) fetchMemoryMap();
+  }, [refresh, sessionId]);
+
+  if (sessionLoading) {
+    return (
+      <div className="memoryMap loading-container">
+        <div className="pulse-spinner"></div>
+        <p>Initializing debug session...</p>
+      </div>
+    );
+  }
+
+  if (sessionError) {
+    return (
+      <div className="memoryMap error-container">
+        <div className="error-banner">
+          <span className="error-icon">⚠️</span>
+          <p>{sessionError}</p>
+          <button onClick={() => { clearSessionError(); createSession(); }}>
+            Start New Session
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sessionId) {
+    return (
+      <div className="memoryMap error-container">
+        <p>No active session.</p>
+        <button className="save-button" onClick={createSession}>Start Debug Session</button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -37,10 +80,10 @@ const MemoryMap = () => {
         {memoryMap
           ? memoryMap
           : data?.length > 0
-          ? data.map((obj) => {
-              return <a>{obj}</a>;
+            ? data.map((obj, i) => {
+              return <div key={i}>{obj}</div>;
             })
-          : ""}
+            : ""}
       </div>
     </div>
   );

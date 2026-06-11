@@ -216,3 +216,153 @@ We welcome contributions from the community! To get started:
 ## Design
 
 https://www.figma.com/proto/flJ4HBaH4QhF18RSKGOWwA/GDB-UI?type=design&node-id=111-1101&t=sDAc1dWc1LAfqpaT-0&scaling=min-zoom&page-id=0%3A1&starting-point-node-id=111%3A2956
+
+
+## Architecture
+
+### Before — Global State (Legacy)
+
+```
+User A ──► POST /gdb_command
+                  │
+User B ──► POST /gdb_command
+                  │
+                  ▼
+         ┌────────────────┐
+         │  global state  │  (shared — one GDB for everyone)
+         │   gdb_ctrl     │
+         │   program_name │
+         └───────┬────────┘
+                 │
+                 ▼
+         ┌────────────────┐
+         │  one GDB proc  │  ← User B's request kills User A's session
+         └────────────────┘
+```
+
+*Problem:* Requests from multiple users overwrite the shared controller.
+The second user's `start_gdb_session()` silently kills the first user's GDB process.
+
+### After — Per-Session Isolation
+
+```
+User A ──► POST /create_session ──► abc-123
+User B ──► POST /create_session ──► def-456
+
+┌────────────────────────────────────────────────────┐
+│  SessionManager (in-memory dict)                    │
+│                                                     │
+│  sessions["abc-123"]   sessions["def-456"]          │
+│  ┌─────────────────┐   ┌─────────────────┐          │
+│  │ session_lock     │   │ session_lock     │          │
+│  │ (threading.RLock)│   │ (threading.RLock)│          │
+│  │ controller: GDB  │   │ controller: GDB  │          │
+│  │ program: "progA" │   │ program: "progB" │          │
+│  │ output/abc-123/  │   │ output/def-456/  │          │
+│  └────────┬────────┘   └────────┬────────┘          │
+│           │                     │                    │
+│  Global lock (dict mutations only — microseconds)    │
+│  Per-session lock (GDB I/O — milliseconds/seconds)   │
+│  controller.write() NEVER called under global lock   │
+└────────────────────────────────────────────────────┘
+           │                     │
+           ▼                     ▼
+   ┌────────────────┐   ┌────────────────┐
+   │  GDB proc A    │   │  GDB proc B    │
+   │  (isolated)    │   │  (isolated)    │
+   └────────────────┘   └────────────────┘
+```
+
+### Locking Strategy
+
+```
+Request A (thread 1)                 Request B (thread 2)
+        │                                   │
+        ▼                                   ▼
+┌──────────────────────┐          ┌──────────────────────┐
+│  global lock         │          │  global lock          │
+│  (acquire, micros)   │          │  (acquire, micros)    │
+│  sessions[sid] lookup│          │  sessions[sid] lookup │
+│  (release)           │          │  (release)            │
+│  ✓ dict safe         │          │  ✓ dict safe          │
+└──────────────────────┘          └──────────────────────┘
+        │                                   │
+        ▼                                   ▼
+┌──────────────────────┐          ┌──────────────────────┐
+│  session_lock A      │          │  session_lock B      │
+│  (acquire, RLock)    │          │  (acquire, RLock)    │
+│  controller.write()  │          │  controller.write()  │
+│  (release)           │          │  (release)           │
+│  ✓ GDB I/O serialized│          │  ✓ GDB I/O serialized│
+└──────────────────────┘          └──────────────────────┘
+        │                                   │
+        ▼                                   ▼
+   ┌──────────┐                      ┌──────────┐
+   │ GDB A    │                      │ GDB B    │
+   └──────────┘                      └──────────┘
+```
+
+*Two sessions proceed in parallel because global lock is only held for dict lookups
+(microseconds). GDB I/O under per-session locks never collides.*
+
+### File Isolation
+
+```
+output/
+├── abc-123/          ← User A
+│   ├── progA         (binary)
+│   ├── progA.cpp     (source)
+│   └── progA.exe     (Windows binary)
+│
+└── def-456/          ← User B
+    ├── progB
+    ├── progB.cpp
+    └── progB.exe
+```
+
+*Each session's output directory is created on first use. TTL cleanup or
+manual `end_session` removes the entire directory. No cross-session
+filesystem access is possible.*
+
+
+## Deployment Requirements
+
+For development and production, GDB-UI's session manager requires concurrent/threaded execution. Single-threaded configurations will serialize all requests and defeat the per-session GDB isolation mechanism.
+
+### Development (Flask dev server)
+The Flask development server runs with `threaded=True` by default since Flask 1.0+. Do not disable threading.
+```sh
+python main.py
+```
+
+### Production (Gunicorn)
+For production deployments, Gunicorn must be configured with exactly **1 worker process** and **multiple threads**. Since GDB session metadata and locks are stored in-memory, running with multiple worker processes will cause requests to be routed to different processes where their sessions are not recognized, resulting in `404 Not Found` errors.
+```sh
+gunicorn -w 1 --threads 4 main:app
+```
+**Requirements:**
+- At least 1 worker with multiple threads (e.g., `--threads 4`).
+- Do NOT use: `gunicorn -w 1 --threads 1` (disables concurrency).
+- Do NOT use: `gunicorn -w N` (N > 1), as session states are stored in-memory per process.
+
+## Session Lifecycle & Security Model
+
+GDB-UI implements robust multi-user isolation to support multiple concurrent users debugging different programs independently on a single backend instance.
+
+### Session Lifecycle
+1. **Creation**: On page mount, the React client requests a new session via `/create_session`. The server generates a unique UUID (e.g., `session_id`), creates isolated output directory `output/{session_id}/`, and registers a reentrant lock `threading.RLock` to serialize debugging operations for that session.
+2. **Execution**: Every API request (such as compiling code, setting breakpoints, executing commands) must include the `session_id`. The server routes the command to the session's isolated `pygdbmi.GdbController` instance.
+3. **Automatic Cleanup (TTL)**: A background cleanup thread runs every 60 seconds on the server. If a session is inactive for more than the TTL (default: 3600 seconds/1 hour), GDB is closed, the session is removed, and its isolated directory `output/{session_id}/` is deleted.
+4. **Manual Termination**: When the webapp unmounts or a user resets their session, the client issues a POST `/end_session` request to trigger immediate cleanup.
+
+### Security Model
+- **Isolation Boundary**: Each session runs its own OS-level GDB process. Output files, compilation units, and debugged binaries are isolated under `output/{session_id}/` to prevent cross-session access.
+- **Path Traversal Blocking**: Program names are validated using strict sanitization rules (`sanitize_program_name`), preventing path traversal attacks (e.g., passing `../../` to access files outside the session directory).
+- **Two-Tier Locking**: A global lock protects the SessionManager's session dictionary structure from concurrent mutations, while per-session `RLock` instances serialize all GDB I/O operations and file compilation/upload phases for each session.
+- **Compiling Safely**: When compilation (`/compile`) or file upload (`/upload_file`) is requested, the server locks the session, checks if a debug session is active, and if so, blocks compilation and returns `409 Conflict`. Otherwise, it writes the file and runs the compiler cleanly, updating the program state.
+- **Error Resilience**: Malformed GDB Machine Interface (MI) tokens are caught by the `_parse_response` wrapper inside `SessionManager`, returning structured error payloads to the client without terminating the debug session.
+
+### Known Limitations
+
+- **BLOCKED_COMMANDS is not sufficient against expression injection**: The `BLOCKED_COMMANDS` set blocks shell-level commands (`shell`, `python`, `!`, etc.) but does NOT prevent malicious expressions from executing through GDB's expression evaluator. For example, `call system("rm -rf /")` is a valid GDB MI expression that bypasses the command-level blocklist. Full sandboxing requires Phase 3 Docker container isolation.
+- **Session ID as sole auth token**: The `session_id` UUID is the only authorization mechanism. This is acceptable for local or trusted-network deployments. Public internet exposure would require additional authentication (signed tokens, user accounts, or HTTPS + HttpOnly cookies).

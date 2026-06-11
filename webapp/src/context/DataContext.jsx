@@ -5,10 +5,13 @@ import React, {
   useCallback,
   useContext,
 } from "react";
+import useSession from "../hooks/useSession";
+import { onSessionExpired } from "../api";
 
 export const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
+  const session = useSession();
   const [isDarkMode, setDarkMode] = useState("dark");
   const [dark, setDark] = useState(false);
   const [refresh, setRefresh] = useState(false);
@@ -18,6 +21,13 @@ export const DataProvider = ({ children }) => {
   const [memoryMap, setMemoryMap] = useState("");
   const [terminalOutput, setTerminalOutput] = useState("");
   const [commandCount, setCommandCount] = useState(0);
+
+  // Register session expiry interceptor handler
+  useEffect(() => {
+    onSessionExpired((error) => {
+      session.handleSessionError(error);
+    });
+  }, [session.handleSessionError]);
 
   const fetchData = useCallback(async () => {
     if (refresh) {
@@ -36,6 +46,7 @@ export const DataProvider = ({ children }) => {
 
   const runCommandInTerminal = (command) => {
     setTerminalOutput(command);
+    setCommandCount((prev) => prev + 1);
   };
 
   return (
@@ -58,7 +69,15 @@ export const DataProvider = ({ children }) => {
         terminalOutput,
         setCommandCount,
         commandCount,
+        runCommandInTerminal,
         setTerminalOutput,
+        sessionId: session.sessionId,
+        sessionLoading: session.sessionLoading,
+        sessionError: session.sessionError,
+        createSession: session.createSession,
+        endSession: session.endSession,
+        handleSessionError: session.handleSessionError,
+        clearSessionError: session.clearSessionError,
       }}
     >
       {children}

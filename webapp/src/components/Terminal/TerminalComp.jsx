@@ -1,11 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ReactTerminal } from "react-terminal";
-import api from "../../api";
+import { makeRequest } from "../../api";
 import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
 
 const TerminalComp = () => {
-  const { terminalOutput, commandCount } = DataState();
+  const {
+    terminalOutput,
+    commandPress,
+    commandCount,
+    sessionId,
+    sessionLoading,
+    sessionError,
+    createSession,
+    clearSessionError
+  } = DataState();
   const [output, setOutput] = useState("");
   const terminalRef = useRef(null);
 
@@ -13,10 +22,10 @@ const TerminalComp = () => {
     const fullCommand = [command, ...args].join(" ");
     console.log("Full Command:", fullCommand);
     try {
-      const { data } = await api.post("/gdb_command", {
+      const { data } = await makeRequest("/gdb_command", {
         command: fullCommand,
         name: "program",
-      });
+      }, sessionId);
       return data["result"];
     } catch (error) {
       return "Error executing command";
@@ -36,6 +45,38 @@ const TerminalComp = () => {
       defaultHandler(terminalOutput);
     }
   }, [commandCount]);
+
+  if (sessionLoading) {
+    return (
+      <div className="terminal-loading">
+        <div className="pulse-spinner"></div>
+        <p>Initializing debug session...</p>
+      </div>
+    );
+  }
+
+  if (sessionError) {
+    return (
+      <div className="terminal-error">
+        <div className="error-banner">
+          <span className="error-icon">⚠️</span>
+          <p>{sessionError}</p>
+          <button onClick={() => { clearSessionError(); createSession(); }}>
+            Start New Session
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sessionId) {
+    return (
+      <div className="terminal-error">
+        <p>No active session.</p>
+        <button onClick={createSession}>Start Debug Session</button>
+      </div>
+    );
+  }
 
   return (
     <div className="terminal">

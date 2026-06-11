@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import Debug from "./pages/Debug/Debug";
+import Demo from "./pages/Demo/Demo";
 import Home from "./pages/Home/Home";
 import Login from "./pages/Login/Login";
 import Threads from "./components/GdbComponents/Threads/Threads";
@@ -39,6 +40,7 @@ const App = () => {
           <Route path="memoryMap" element={<MemoryMap />} />
           <Route path="breakPoints" element={<BreakPoints />} />
         </Route>
+        <Route path="demo" element={<Demo />} />
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
       </Routes>

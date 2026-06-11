@@ -1,6 +1,17 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import Breakpoint from "../Breakpoint.jsx";
+import { vi } from "vitest";
+
+vi.mock("../../../context/DataContext.jsx", () => ({
+  DataState: () => ({
+    sessionId: 'test-session-123',
+    sessionLoading: false,
+    sessionError: null,
+    createSession: vi.fn(),
+    clearSessionError: vi.fn(),
+  }),
+}));
 
 // Breakpoint
 test("renders Breakpoint component with basic structure", () => {
