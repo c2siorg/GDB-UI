@@ -1,5 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
+import { vi } from "vitest";
 import Stack from "../Stack.jsx";
 
 vi.mock("../../../context/DataContext.jsx", () => ({
