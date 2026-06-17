@@ -16,6 +16,10 @@ app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+from flask_socketio import SocketIO, emit, join_room, leave_room
+
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins='*')
+
 session_manager = SessionManager()
 atexit.register(session_manager.shutdown)
 
@@ -666,5 +670,31 @@ def delete_breakpoint():
         return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
+# ---------------------------------------------------------------------------
+# WebSocket namespace: /ws/debug
+# ---------------------------------------------------------------------------
+
+
+@socketio.on('connect', namespace='/ws/debug')
+def handle_ws_connect():
+    session_id = request.args.get('session_id')
+    if not session_id:
+        return False
+
+    session = session_manager.get_session(session_id)
+    if not session:
+        return False
+
+    join_room(session_id)
+    emit('connected', {'session_id': session_id})
+
+
+@socketio.on('disconnect', namespace='/ws/debug')
+def handle_ws_disconnect():
+    session_id = request.args.get('session_id')
+    if session_id:
+        leave_room(session_id)
+
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    socketio.run(app, host='0.0.0.0', port=10000)
