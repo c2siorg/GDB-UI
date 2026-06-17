@@ -155,14 +155,14 @@ def register_gdb_route(route, command, required_fields=None):
         session_id, error = get_session_id(data)
         if error:
             return error
-        file = data.get('name')
+        program = data.get('name')
 
         validation_error = validate_v2_required_fields(data, required_fields)
         if validation_error:
             return validation_error
 
         try:
-            session_manager.ensure_program(session_id, file)
+            session_manager.ensure_program(session_id, program)
             result = session_manager.execute(session_id, command)
             return success_response({'result': result})
         except Exception as e:
