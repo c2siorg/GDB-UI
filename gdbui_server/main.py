@@ -132,6 +132,48 @@ def get_session_id(data):
 
 
 # ---------------------------------------------------------------------------
+# GDB route registration helper (reduces boilerplate for fixed-command routes)
+# ---------------------------------------------------------------------------
+
+def register_gdb_route(route, command, required_fields=None):
+    """Register a GDB command route with both /v2/... and /... paths.
+
+    Handles repeated boilerplate: JSON body parsing, session validation,
+    required-field validation, GDB command execution, and error wrapping.
+
+    Args:
+        route: The route path (e.g. '/stack_trace').
+        command: The GDB command string to execute.
+        required_fields: List of required JSON body fields (default ['name']).
+    """
+    required_fields = required_fields or ['name']
+
+    def handler():
+        data, err = get_request_data()
+        if err:
+            return err
+        session_id, error = get_session_id(data)
+        if error:
+            return error
+        file = data.get('name')
+
+        validation_error = validate_v2_required_fields(data, required_fields)
+        if validation_error:
+            return validation_error
+
+        try:
+            session_manager.ensure_program(session_id, file)
+            result = session_manager.execute(session_id, command)
+            return success_response({'result': result})
+        except Exception as e:
+            return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
+
+    app.route(route, methods=['POST'])(handler)
+    app.route(f'/v2{route}', methods=['POST'])(handler)
+    return handler
+
+
+# ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
@@ -365,257 +407,17 @@ def set_breakpoint():
         return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
 
-@v2_route('/info_breakpoints')
-@app.route('/info_breakpoints', methods=['POST'])
-def info_breakpoints():
-    data, err = get_request_data()
-    if err:
-        return err
-    session_id, error = get_session_id(data)
-    if error:
-        return error
-    file = data.get('name')
-
-    validation_error = validate_v2_required_fields(data, ['name'])
-    if validation_error:
-        return validation_error
-
-    try:
-        session_manager.ensure_program(session_id, file)
-        result = session_manager.execute(session_id, "info breakpoints")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
-
-
-@v2_route('/stack_trace')
-@app.route('/stack_trace', methods=['POST'])
-def stack_trace():
-    data, err = get_request_data()
-    if err:
-        return err
-    session_id, error = get_session_id(data)
-    if error:
-        return error
-    file = data.get('name')
-
-    validation_error = validate_v2_required_fields(data, ['name'])
-    if validation_error:
-        return validation_error
-
-    try:
-        session_manager.ensure_program(session_id, file)
-        result = session_manager.execute(session_id, "bt")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
-
-
-@v2_route('/threads')
-@app.route('/threads', methods=['POST'])
-def threads():
-    data, err = get_request_data()
-    if err:
-        return err
-    session_id, error = get_session_id(data)
-    if error:
-        return error
-    file = data.get('name')
-
-    validation_error = validate_v2_required_fields(data, ['name'])
-    if validation_error:
-        return validation_error
-
-    try:
-        session_manager.ensure_program(session_id, file)
-        result = session_manager.execute(session_id, "info threads")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
-
-
-@v2_route('/get_registers')
-@app.route('/get_registers', methods=['POST'])
-def get_registers():
-    data, err = get_request_data()
-    if err:
-        return err
-    session_id, error = get_session_id(data)
-    if error:
-        return error
-    file = data.get('name')
-
-    validation_error = validate_v2_required_fields(data, ['name'])
-    if validation_error:
-        return validation_error
-
-    try:
-        session_manager.ensure_program(session_id, file)
-        result = session_manager.execute(session_id, "info registers")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
-
-
-@v2_route('/get_locals')
-@app.route('/get_locals', methods=['POST'])
-def get_locals():
-    data, err = get_request_data()
-    if err:
-        return err
-    session_id, error = get_session_id(data)
-    if error:
-        return error
-    file = data.get('name')
-
-    validation_error = validate_v2_required_fields(data, ['name'])
-    if validation_error:
-        return validation_error
-
-    try:
-        session_manager.ensure_program(session_id, file)
-        result = session_manager.execute(session_id, "info functions")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
-
-
-@v2_route('/run')
-@app.route('/run', methods=['POST'])
-def run_program():
-    data, err = get_request_data()
-    if err:
-        return err
-    session_id, error = get_session_id(data)
-    if error:
-        return error
-    file = data.get('name')
-
-    validation_error = validate_v2_required_fields(data, ['name'])
-    if validation_error:
-        return validation_error
-
-    try:
-        session_manager.ensure_program(session_id, file)
-        result = session_manager.execute(session_id, "run")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
-
-
-@v2_route('/memory_map')
-@app.route('/memory_map', methods=['POST'])
-def memory_map():
-    data, err = get_request_data()
-    if err:
-        return err
-    session_id, error = get_session_id(data)
-    if error:
-        return error
-    file = data.get('name')
-
-    validation_error = validate_v2_required_fields(data, ['name'])
-    if validation_error:
-        return validation_error
-
-    try:
-        session_manager.ensure_program(session_id, file)
-        result = session_manager.execute(session_id, "info proc mappings")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
-
-
-@v2_route('/continue')
-@app.route('/continue', methods=['POST'])
-def continue_execution():
-    data, err = get_request_data()
-    if err:
-        return err
-    session_id, error = get_session_id(data)
-    if error:
-        return error
-    file = data.get('name')
-
-    validation_error = validate_v2_required_fields(data, ['name'])
-    if validation_error:
-        return validation_error
-
-    try:
-        session_manager.ensure_program(session_id, file)
-        result = session_manager.execute(session_id, "continue")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
-
-
-@v2_route('/step_over')
-@app.route('/step_over', methods=['POST'])
-def step_over():
-    data, err = get_request_data()
-    if err:
-        return err
-    session_id, error = get_session_id(data)
-    if error:
-        return error
-    file = data.get('name')
-
-    validation_error = validate_v2_required_fields(data, ['name'])
-    if validation_error:
-        return validation_error
-
-    try:
-        session_manager.ensure_program(session_id, file)
-        result = session_manager.execute(session_id, "next")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
-
-
-@v2_route('/step_into')
-@app.route('/step_into', methods=['POST'])
-def step_into():
-    data, err = get_request_data()
-    if err:
-        return err
-    session_id, error = get_session_id(data)
-    if error:
-        return error
-    file = data.get('name')
-
-    validation_error = validate_v2_required_fields(data, ['name'])
-    if validation_error:
-        return validation_error
-
-    try:
-        session_manager.ensure_program(session_id, file)
-        result = session_manager.execute(session_id, "step")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
-
-
-@v2_route('/step_out')
-@app.route('/step_out', methods=['POST'])
-def step_out():
-    data, err = get_request_data()
-    if err:
-        return err
-    session_id, error = get_session_id(data)
-    if error:
-        return error
-    file = data.get('name')
-
-    validation_error = validate_v2_required_fields(data, ['name'])
-    if validation_error:
-        return validation_error
-
-    try:
-        session_manager.ensure_program(session_id, file)
-        result = session_manager.execute(session_id, "finish")
-        return success_response({'result': result})
-    except Exception as e:
-        return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
+register_gdb_route('/info_breakpoints', 'info breakpoints')
+register_gdb_route('/stack_trace', 'bt')
+register_gdb_route('/threads', 'info threads')
+register_gdb_route('/get_registers', 'info registers')
+register_gdb_route('/get_locals', 'info locals')
+register_gdb_route('/run', 'run')
+register_gdb_route('/memory_map', 'info proc mappings')
+register_gdb_route('/continue', 'continue')
+register_gdb_route('/step_over', 'next')
+register_gdb_route('/step_into', 'step')
+register_gdb_route('/step_out', 'finish')
 
 
 @v2_route('/add_watchpoint')
