@@ -146,7 +146,7 @@ def register_gdb_route(route, command, required_fields=None):
         command: The GDB command string to execute.
         required_fields: List of required JSON body fields (default ['name']).
     """
-    required_fields = required_fields or ['name']
+    required_fields = required_fields if required_fields is not None else ['name']
 
     def handler():
         data, err = get_request_data()
@@ -168,6 +168,9 @@ def register_gdb_route(route, command, required_fields=None):
         except Exception as e:
             return error_response('GDB command failed.', code='GDB_COMMAND_FAILED', exc=e)
 
+    # Give each handler a unique name so Flask endpoints don't collide
+    endpoint = route.strip('/').replace('/', '_') or 'root'
+    handler.__name__ = f"gdb_{endpoint}"
     app.route(route, methods=['POST'])(handler)
     app.route(f'/v2{route}', methods=['POST'])(handler)
     return handler
