@@ -697,4 +697,6 @@ def handle_ws_disconnect():
 
 
 if __name__ == '__main__':
+    from gevent import monkey
+    monkey.patch_all(subprocess=False, select=False, os=False)
     socketio.run(app, host='0.0.0.0', port=10000)
