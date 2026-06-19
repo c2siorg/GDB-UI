@@ -96,4 +96,5 @@ body {
   gap: 10px;
   border-radius: 2px;
   background: var(--primary-orange, #e88f40);
+  cursor: pointer;
 }
