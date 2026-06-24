@@ -18,7 +18,11 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
-socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins='*')
+_cors_origins = os.environ.get(
+    'GDBUI_CORS_ORIGINS',
+    'http://localhost:5173,http://localhost:3000'
+).split(',')
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins=[o.strip() for o in _cors_origins])
 
 session_manager = SessionManager()
 atexit.register(session_manager.shutdown)
@@ -142,8 +146,8 @@ def get_session_id(data):
 @app.route('/create_session', methods=['POST'])
 def create_session():
     try:
-        session_id = session_manager.create_session()
-        return success_response({'session_id': session_id})
+        session_id, ws_token = session_manager.create_session()
+        return success_response({'session_id': session_id, 'ws_token': ws_token})
     except RuntimeError as e:
         return error_response(str(e), status_code=503, code='MAX_SESSIONS_REACHED')
 
@@ -678,11 +682,12 @@ def delete_breakpoint():
 @socketio.on('connect', namespace='/ws/debug')
 def handle_ws_connect():
     session_id = request.args.get('session_id')
+    ws_token = request.args.get('ws_token')
+
     if not session_id:
         return False
 
-    session = session_manager.get_session(session_id)
-    if not session:
+    if not session_manager.validate_ws_token(session_id, ws_token):
         return False
 
     join_room(session_id)

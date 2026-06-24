@@ -110,18 +110,20 @@ class SessionManager:
             if len(self.sessions) >= MAX_SESSIONS:
                 raise RuntimeError("Maximum number of sessions reached")
             session_id = str(uuid.uuid4())
+            ws_token = str(uuid.uuid4())
             self.sessions[session_id] = {
                 'controller': None,
                 'program': None,
                 'compiled_binary': None,
                 'compiling': False,
-                'last_active': time.time()
+                'last_active': time.time(),
+                'ws_token': ws_token,
             }
             self.session_locks[session_id] = threading.RLock()
             # RLock required because ensure_program() calls start_gdb() under same session lock.
             # TODO: Decouple nested lock acquisition in future refactor.
         logger.info("Session created: %s", session_id)
-        return session_id
+        return session_id, ws_token
 
     def session_exists(self, session_id):
         with self.lock:
@@ -136,6 +138,16 @@ class SessionManager:
                 'program': session['program'],
                 'last_active': session['last_active'],
             }
+
+    def validate_ws_token(self, session_id, ws_token):
+        """Verify the WebSocket token for a session before granting room access."""
+        if not ws_token:
+            return False
+        with self.lock:
+            session = self.sessions.get(session_id)
+            if session is None:
+                return False
+            return session.get('ws_token') == ws_token
 
     def _get_session(self, session_id):
         with self.lock:
