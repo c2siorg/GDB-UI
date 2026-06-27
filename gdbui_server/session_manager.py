@@ -10,6 +10,8 @@ import os
 import re
 import shutil
 import logging
+import gevent
+from gevent.event import Event
 from pygdbmi.gdbcontroller import GdbController
 import pygdbmi.gdbmiparser as gdbmiparser
 
@@ -22,6 +24,13 @@ GDB_TIMEOUT = 30
 BLOCKED_COMMANDS = frozenset({
     'shell', 'python', 'python-interactive', 'pi', 'source', 'pipe',
     '!',
+})
+
+# Commands that trigger the reader greenlet to stream GDB output
+# to the session's WebSocket room.
+STREAMING_COMMANDS = frozenset({
+    'run', 'continue', 'next', 'step', 'finish',
+    '-exec-run', '-exec-continue', '-exec-next', '-exec-step', '-exec-finish',
 })
 
 
@@ -64,6 +73,8 @@ class SessionManager:
         self.session_locks = {}
         self.lock = threading.Lock()
         self.session_ttl = session_ttl
+        self.reader_greenlets = {}      # session_id -> greenlet
+        self.reader_stop_events = {}    # session_id -> gevent.Event
         self._start_cleanup_thread()
         logger.info(
             "SessionManager initialized. IMPORTANT: Server must run in threaded/concurrent mode. "
@@ -104,6 +115,86 @@ class SessionManager:
         if session:
             shutil.rmtree(os.path.join('output', session_id), ignore_errors=True)
             logger.info("Expired session cleaned up: %s", session_id)
+
+    def _reader_loop(self, session_id):
+        """Background greenlet: poll GDB output, emit to WebSocket room.
+
+        Polls get_gdb_response() with a short timeout, then emits each
+        response dict as a 'gdb_output' event to the session's Socket.IO
+        room.  Exits when the session controller is removed or the stop
+        event is set.
+        """
+        stop_event = self.reader_stop_events.get(session_id)
+        if not stop_event:
+            return
+
+        while not stop_event.is_set():
+            # Check controller liveness under the per-session lock
+            session_lock = self._get_session_lock(session_id)
+            with session_lock:
+                session = self.sessions.get(session_id)
+                if not session or not session.get('controller'):
+                    break
+                controller = session['controller']
+
+            # Poll OUTSIDE lock — I/O bound, don't block other operations
+            try:
+                responses = controller.get_gdb_response(
+                    timeout_sec=0.1,
+                    raise_error_on_timeout=False,
+                )
+            except Exception as e:
+                logger.warning("Reader poll error for %s: %s", session_id, e)
+                gevent.sleep(0.1)
+                continue
+
+            # Touch session to prevent expiry during long-running execution
+            self._touch(session_id)
+
+            # Emit each response to the WebSocket room
+            for response in responses:
+                try:
+                    # Late import avoids circular dependency with main.py
+                    from main import socketio  # noqa: F811
+                    socketio.emit(
+                        'gdb_output', response,
+                        room=session_id, namespace='/ws/debug',
+                    )
+                except Exception as e:
+                    logger.warning("Emit error for %s: %s", session_id, e)
+
+            gevent.sleep(0.01)  # Brief yield to event loop
+
+        logger.info("Reader greenlet stopped for session %s", session_id)
+
+    def start_reader(self, session_id):
+        """Start the reader greenlet for a session.
+
+        No-op if a reader is already running for this session.
+        """
+        with self.lock:
+            if session_id in self.reader_greenlets:
+                return
+
+            stop_event = Event()
+            self.reader_stop_events[session_id] = stop_event
+
+            greenlet = gevent.spawn(self._reader_loop, session_id)
+            self.reader_greenlets[session_id] = greenlet
+            logger.info("Reader greenlet started for session %s", session_id)
+
+    def stop_reader(self, session_id):
+        """Stop the reader greenlet for a session."""
+        stop_event = None
+        greenlet = None
+        with self.lock:
+            stop_event = self.reader_stop_events.pop(session_id, None)
+            greenlet = self.reader_greenlets.pop(session_id, None)
+        if stop_event:
+            stop_event.set()
+        if greenlet:
+            greenlet.kill(block=False)
+            logger.info("Reader greenlet killed for session %s", session_id)
 
     def create_session(self):
         with self.lock:
@@ -166,6 +257,11 @@ class SessionManager:
                 self.sessions[session_id]['last_active'] = time.time()
 
     def end_session(self, session_id):
+        # stop_reader fires before the session dict pop so the greenlet
+        # exits via the controller-is-null check in _reader_loop.
+        # TODO: If greenlet.kill(block=False) races with a lock held inside
+        #       the greenlet, the RLock counter may become unbalanced.
+        self.stop_reader(session_id)
         with self.lock:
             session = self.sessions.pop(session_id, None)
             lock = self.session_locks.pop(session_id, None)
@@ -263,6 +359,7 @@ class SessionManager:
         Called before compilation when user explicitly ends debug session,
         or during session cleanup.
         """
+        self.stop_reader(session_id)
         with self.lock:
             session = self.sessions.get(session_id)
             if not session:
@@ -294,6 +391,9 @@ class SessionManager:
             try:
                 response = controller.write(command, timeout_sec=GDB_TIMEOUT)
                 self._touch(session_id)
+                # Start reader greenlet for streaming commands (run, continue, step, etc.)
+                if command in STREAMING_COMMANDS:
+                    self.start_reader(session_id)
             except Exception as e:
                 logger.error("pygdbmi write/parse error: %s", e)
                 err_payload = self._parse_response(f"Parser Error: {str(e)}")
