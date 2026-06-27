@@ -26,8 +26,8 @@ class TestSessionManager(unittest.TestCase):
         MockGdbController.side_effect = controllers
 
         sm = SessionManager()
-        sid_a = sm.create_session()
-        sid_b = sm.create_session()
+        sid_a, _ = sm.create_session()
+        sid_b, _ = sm.create_session()
 
         sm.start_gdb(sid_a, 'program_a')
         sm.start_gdb(sid_b, 'program_b')
@@ -54,7 +54,7 @@ class TestSessionManager(unittest.TestCase):
         MockGdbController.return_value = self._make_mock_controller()
 
         sm = SessionManager(session_ttl=1)
-        sid = sm.create_session()
+        sid, _ = sm.create_session()
         sm.start_gdb(sid, 'program')
 
         self.assertIsNotNone(sm.get_session(sid))
@@ -84,7 +84,7 @@ class TestSessionManager(unittest.TestCase):
         MockGdbController.return_value = mock_controller
 
         sm = SessionManager()
-        sid = sm.create_session()
+        sid, _ = sm.create_session()
         sm.start_gdb(sid, 'program')
 
         sm.end_session(sid)
@@ -99,7 +99,7 @@ class TestSessionManager(unittest.TestCase):
         MockGdbController.return_value = mock_controller
 
         sm = SessionManager()
-        sid = sm.create_session()
+        sid, _ = sm.create_session()
         sm.start_gdb(sid, 'program')
 
         errors = []
@@ -140,7 +140,7 @@ class TestSessionManager(unittest.TestCase):
         MockGdbController.return_value = self._make_mock_controller()
 
         sm = SessionManager()
-        sid = sm.create_session()
+        sid, _ = sm.create_session()
 
         sm.ensure_program(sid, 'program_a')
         self.assertEqual(MockGdbController.call_count, 1)
@@ -157,7 +157,7 @@ class TestSessionManager(unittest.TestCase):
         MockGdbController.side_effect = controllers
 
         sm = SessionManager()
-        sid = sm.create_session()
+        sid, _ = sm.create_session()
 
         sm.ensure_program(sid, 'program_a')
         session = sm.get_session(sid)
@@ -219,7 +219,7 @@ class TestSessionManager(unittest.TestCase):
         MockGdbController.return_value = controller
 
         sm = SessionManager()
-        sid = sm.create_session()
+        sid, _ = sm.create_session()
 
         with self.assertRaises(RuntimeError):
             sm.start_gdb(sid, 'program')
@@ -230,7 +230,7 @@ class TestSessionManager(unittest.TestCase):
 
     def test_session_output_directory_created(self):
         sm = SessionManager()
-        session_id = sm.create_session()
+        session_id, _ = sm.create_session()
         try:
             sm.start_gdb(session_id, 'test_program')
         except Exception:
@@ -258,7 +258,7 @@ class TestSessionManager(unittest.TestCase):
         MockGdbController.return_value = mock_controller
 
         sm = SessionManager()
-        sid = sm.create_session()
+        sid, _ = sm.create_session()
         with patch('session_manager.os.path.exists', return_value=True):
             sm.start_gdb(sid, 'program')
 
