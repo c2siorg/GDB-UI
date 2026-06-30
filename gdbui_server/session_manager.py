@@ -1,8 +1,3 @@
-# Architecture note: global lock protects dict mutations only (microseconds).
-# Per-session locks serialize GDB I/O (milliseconds-seconds).
-# controller.write() is never called under the global lock  no deadlock possible.
-# To swap backing store  replace SessionManager internals only.
-# Flask routes in main.py require zero changes.
 import uuid
 import threading
 import time
@@ -10,6 +5,9 @@ import os
 import re
 import shutil
 import logging
+import secrets
+import gevent
+from gevent.event import Event
 from pygdbmi.gdbcontroller import GdbController
 import pygdbmi.gdbmiparser as gdbmiparser
 
@@ -22,6 +20,12 @@ GDB_TIMEOUT = 30
 BLOCKED_COMMANDS = frozenset({
     'shell', 'python', 'python-interactive', 'pi', 'source', 'pipe',
     '!',
+})
+
+# Commands that trigger the streaming reader greenlet.
+STREAMING_COMMANDS = frozenset({
+    'run', 'continue', 'next', 'step', 'finish',
+    '-exec-run', '-exec-continue', '-exec-next', '-exec-step', '-exec-finish',
 })
 
 
@@ -64,12 +68,10 @@ class SessionManager:
         self.session_locks = {}
         self.lock = threading.Lock()
         self.session_ttl = session_ttl
+        self.reader_greenlets = {}      # session_id -> greenlet
+        self.reader_stop_events = {}    # session_id -> gevent.Event
         self._start_cleanup_thread()
-        logger.info(
-            "SessionManager initialized. IMPORTANT: Server must run in threaded/concurrent mode. "
-            "See README.md for deployment configuration. "
-            "Single-threaded servers will serialize all requests and defeat per-session isolation."
-        )
+        logger.info("SessionManager initialized")
 
     def _start_cleanup_thread(self):
         thread = threading.Thread(target=self._cleanup_expired, daemon=True)
@@ -88,6 +90,7 @@ class SessionManager:
                 self._end_session_if_expired(sid)
 
     def _end_session_if_expired(self, session_id):
+        self.stop_reader(session_id)
         with self.lock:
             session = self.sessions.get(session_id)
             if session is None:
@@ -104,6 +107,91 @@ class SessionManager:
         if session:
             shutil.rmtree(os.path.join('output', session_id), ignore_errors=True)
             logger.info("Expired session cleaned up: %s", session_id)
+
+    def _emit_session_expired(self, session_id):
+        try:
+            from main import socketio
+            socketio.emit('session_expired', {
+                'reason': 'Session expired or ended',
+            }, room=session_id, namespace='/ws/debug')
+        except Exception as e:
+            logger.warning("Failed to emit session_expired for %s: %s", session_id, e)
+
+    def _reader_loop(self, session_id):
+        """Poll GDB output and emit to the session WebSocket room."""
+        stop_event = self.reader_stop_events.get(session_id)
+        if not stop_event:
+            return
+
+        while not stop_event.is_set():
+            try:
+                session_lock = self._get_session_lock(session_id)
+            except RuntimeError:
+                # Session was removed externally (expired or ended)
+                self._emit_session_expired(session_id)
+                break
+
+            with session_lock:
+                session = self.sessions.get(session_id)
+                if not session:
+                    self._emit_session_expired(session_id)
+                    break
+                if not session.get('controller'):
+                    break
+                controller = session['controller']
+
+            try:
+                responses = controller.get_gdb_response(
+                    timeout_sec=0.1,
+                    raise_error_on_timeout=False,
+                )
+            except Exception as e:
+                logger.warning("Reader poll error for %s: %s", session_id, e)
+                gevent.sleep(0.1)
+                continue
+
+            self._touch(session_id)
+
+            for response in responses:
+                try:
+                    # Late import avoids circular dependency with main.py
+                    from main import socketio  # noqa: F811
+                    socketio.emit(
+                        'gdb_output', response,
+                        room=session_id, namespace='/ws/debug',
+                    )
+                except Exception as e:
+                    logger.warning("Emit error for %s: %s", session_id, e)
+
+            gevent.sleep(0.01)
+
+        logger.info("Reader greenlet stopped for session %s", session_id)
+
+    def start_reader(self, session_id):
+        """Start the reader greenlet, no-op if already running."""
+        with self.lock:
+            if session_id in self.reader_greenlets:
+                return
+
+            stop_event = Event()
+            self.reader_stop_events[session_id] = stop_event
+
+            greenlet = gevent.spawn(self._reader_loop, session_id)
+            self.reader_greenlets[session_id] = greenlet
+            logger.info("Reader greenlet started for session %s", session_id)
+
+    def stop_reader(self, session_id):
+        """Stop the reader greenlet for a session."""
+        stop_event = None
+        greenlet = None
+        with self.lock:
+            stop_event = self.reader_stop_events.pop(session_id, None)
+            greenlet = self.reader_greenlets.pop(session_id, None)
+        if stop_event:
+            stop_event.set()
+        if greenlet:
+            greenlet.kill(block=False)
+            logger.info("Reader greenlet killed for session %s", session_id)
 
     def create_session(self):
         with self.lock:
@@ -147,7 +235,10 @@ class SessionManager:
             session = self.sessions.get(session_id)
             if session is None:
                 return False
-            return session.get('ws_token') == ws_token
+            expected = session.get('ws_token')
+            if expected is None:
+                return False
+            return secrets.compare_digest(expected, ws_token)
 
     def _get_session(self, session_id):
         with self.lock:
@@ -166,6 +257,8 @@ class SessionManager:
                 self.sessions[session_id]['last_active'] = time.time()
 
     def end_session(self, session_id):
+        # stop_reader first so the greenlet exits via the null-controller check
+        self.stop_reader(session_id)
         with self.lock:
             session = self.sessions.pop(session_id, None)
             lock = self.session_locks.pop(session_id, None)
@@ -240,7 +333,7 @@ class SessionManager:
                 session['last_active'] = time.time()
 
     def _parse_response(self, raw_response: str):
-        """Wrap pygdbmi parser with error resilience.
+        """Catch pygdbmi parse errors and return a structured payload.
 
         When GDB is in a bad state (infinite loop, segfault during execution),
         pygdbmi returns malformed MI tokens. This wrapper catches parse errors
@@ -258,11 +351,8 @@ class SessionManager:
             }
 
     def stop_gdb(self, session_id: str):
-        """Terminate the GDB controller for a session and reset program state.
-
-        Called before compilation when user explicitly ends debug session,
-        or during session cleanup.
-        """
+        """Terminate GDB and reset session program state."""
+        self.stop_reader(session_id)
         with self.lock:
             session = self.sessions.get(session_id)
             if not session:
@@ -294,6 +384,8 @@ class SessionManager:
             try:
                 response = controller.write(command, timeout_sec=GDB_TIMEOUT)
                 self._touch(session_id)
+                if command in STREAMING_COMMANDS:
+                    self.start_reader(session_id)
             except Exception as e:
                 logger.error("pygdbmi write/parse error: %s", e)
                 err_payload = self._parse_response(f"Parser Error: {str(e)}")

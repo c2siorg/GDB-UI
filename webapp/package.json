@@ -23,6 +23,7 @@
     "react-terminal": "^1.4.4",
     "react-toastify": "^10.0.5",
     "react-toggle-dark-mode": "^1.1.1",
+    "socket.io-client": "^4.8.3",
     "terminal-in-react": "^4.3.1"
   },
   "devDependencies": {

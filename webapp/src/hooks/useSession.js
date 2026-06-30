@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { setSessionIdForApi } from "../api";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:10000";
+import API_BASE from "../config";
 
 export const useSession = () => {
   const [sessionId, setSessionId] = useState(null);
+  const [wsToken, setWsToken] = useState(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionError, setSessionError] = useState(null);
   const isMounted = useRef(false);
@@ -18,8 +18,10 @@ export const useSession = () => {
       setSessionError(null);
       const response = await axios.post(`${API_BASE}/create_session`);
       const sid = response.data.session_id;
+      const token = response.data.ws_token;
       if (!isMounted.current) return;
       setSessionId(sid);
+      setWsToken(token);
       sessionIdRef.current = sid;
       setSessionIdForApi(sid);
     } catch (error) {
@@ -35,6 +37,7 @@ export const useSession = () => {
       }
       setSessionError(message);
       setSessionId(null);
+      setWsToken(null);
       sessionIdRef.current = null;
       setSessionIdForApi(null);
     } finally {
@@ -66,7 +69,8 @@ export const useSession = () => {
     const status = error.response?.status;
     if (status === 404) {
       setSessionError("Session expired or not found. Please start a new debug session.");
-      setSessionId(null);  // Force re-creation on next user action
+      setSessionId(null);
+      setWsToken(null);
       sessionIdRef.current = null;
       setSessionIdForApi(null);
       return true;  // Error was handled
@@ -89,6 +93,7 @@ export const useSession = () => {
 
   return {
     sessionId,
+    wsToken,
     sessionLoading,
     sessionError,
     setSessionError,

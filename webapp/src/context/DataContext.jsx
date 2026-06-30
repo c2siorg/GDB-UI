@@ -6,12 +6,14 @@ import React, {
   useContext,
 } from "react";
 import useSession from "../hooks/useSession";
+import useStreamingOutput from "../hooks/useStreamingOutput";
 import { onSessionExpired } from "../api";
 
 export const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
   const session = useSession();
+  const streaming = useStreamingOutput(session.sessionId, session.wsToken);
   const [isDarkMode, setDarkMode] = useState("dark");
   const [dark, setDark] = useState(false);
   const [refresh, setRefresh] = useState(false);
@@ -71,7 +73,12 @@ export const DataProvider = ({ children }) => {
         commandCount,
         runCommandInTerminal,
         setTerminalOutput,
+        streamingLines: streaming.lines,
+        isStreaming: streaming.isConnected,
+        streamingError: streaming.error,
+        clearStreamingOutput: streaming.clearOutput,
         sessionId: session.sessionId,
+        wsToken: session.wsToken,
         sessionLoading: session.sessionLoading,
         sessionError: session.sessionError,
         createSession: session.createSession,
