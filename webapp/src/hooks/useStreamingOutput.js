@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:10000";
+import API_BASE from "../config";
 
 const MAX_LINES = 1000;
 
 function formatLine(response) {
   const payload = response?.payload;
   if (payload == null) return "";
-  return String(payload).trimEnd();
+  if (typeof payload === "string") return payload.trimEnd();
+  try {
+    return JSON.stringify(payload);
+  } catch {
+    return String(payload);
+  }
 }
 
 export function useStreamingOutput(sessionId, wsToken) {

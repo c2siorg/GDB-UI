@@ -151,3 +151,69 @@ test("commandCount is defined and accessible", () => {
   // (commandCount is consumed inside DataState destructuring)
   expect(screen.getByTestId("react-terminal")).toBeInTheDocument();
 });
+
+test("renders streaming panel with output lines", () => {
+  mockState.streamingLines = ["Hello from GDB", "Breakpoint hit"];
+  mockState.isStreaming = true;
+
+  render(<TerminalComp />);
+
+  expect(screen.getByText("Hello from GDB")).toBeInTheDocument();
+  expect(screen.getByText("Breakpoint hit")).toBeInTheDocument();
+  expect(screen.getByText(/Stream/)).toBeInTheDocument();
+  // Connected status is indicated by the CSS class "connected" on the status span
+  expect(document.querySelector(".streaming-status.connected")).toBeInTheDocument();
+});
+
+test("renders streaming panel with waiting message when connected but no output", () => {
+  mockState.streamingLines = [];
+  mockState.isStreaming = true;
+
+  render(<TerminalComp />);
+
+  expect(screen.getByText("Waiting for output...")).toBeInTheDocument();
+  expect(screen.getByText(/Stream/)).toBeInTheDocument();
+  expect(document.querySelector(".streaming-status.connected")).toBeInTheDocument();
+});
+
+test("does not render streaming panel when not connected and no lines", () => {
+  mockState.streamingLines = [];
+  mockState.isStreaming = false;
+
+  render(<TerminalComp />);
+
+  expect(screen.queryByText(/Stream/)).not.toBeInTheDocument();
+  expect(screen.queryByText("Waiting for output...")).not.toBeInTheDocument();
+});
+
+test("clear button calls clearStreamingOutput", () => {
+  const clearStreamingOutput = vi.fn();
+  mockState.streamingLines = ["some output"];
+  mockState.isStreaming = true;
+  mockState.clearStreamingOutput = clearStreamingOutput;
+
+  render(<TerminalComp />);
+
+  fireEvent.click(screen.getByText("Clear"));
+  expect(clearStreamingOutput).toHaveBeenCalledTimes(1);
+});
+
+test("renders streaming error banner when streamingError is set", () => {
+  mockState.streamingError = "Session expired. Please create a new debug session.";
+
+  render(<TerminalComp />);
+
+  expect(screen.getByText("Session expired. Please create a new debug session.")).toBeInTheDocument();
+});
+
+test("shows disconnected status indicator when not connected but has lines", () => {
+  mockState.streamingLines = ["old output"];
+  mockState.isStreaming = false;
+
+  render(<TerminalComp />);
+
+  expect(screen.getByText("old output")).toBeInTheDocument();
+  expect(screen.getByText(/Stream/)).toBeInTheDocument();
+  // Disconnected status: class is "streaming-status " (no "connected")
+  expect(document.querySelector(".streaming-status:not(.connected)")).toBeInTheDocument();
+});

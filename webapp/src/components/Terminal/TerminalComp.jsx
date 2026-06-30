@@ -25,7 +25,6 @@ const TerminalComp = () => {
 
   const handleCommand = async (command, ...args) => {
     const fullCommand = [command, ...args].join(" ");
-    console.log("Full Command:", fullCommand);
     try {
       const { data } = await makeRequest("/gdb_command", {
         command: fullCommand,
@@ -44,9 +43,7 @@ const TerminalComp = () => {
   };
 
   useEffect(() => {
-    console.log(terminalOutput);
     if (terminalOutput) {
-      console.log(terminalOutput);
       defaultHandler(terminalOutput);
     }
   }, [commandCount]);
@@ -104,7 +101,7 @@ const TerminalComp = () => {
         theme="my-custom-theme"
         defaultHandler={defaultHandler}
       />
-      {streamingLines.length > 0 && (
+      {(isStreaming || streamingLines.length > 0) && (
         <div className="streaming-output">
           <div className="streaming-header">
             <span className={`streaming-status ${isStreaming ? "connected" : ""}`}>
@@ -119,9 +116,13 @@ const TerminalComp = () => {
             </button>
           </div>
           <div className="streaming-body" ref={streamingEndRef}>
-            {streamingLines.map((line, i) => (
-              <pre key={i} className="stream-line">{line}</pre>
-            ))}
+            {streamingLines.length === 0 ? (
+              <p className="stream-line" style={{ opacity: 0.5 }}>Waiting for output...</p>
+            ) : (
+              streamingLines.map((line, i) => (
+                <pre key={i} className="stream-line">{line}</pre>
+              ))
+            )}
           </div>
         </div>
       )}

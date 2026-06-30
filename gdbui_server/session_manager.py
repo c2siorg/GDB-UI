@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import logging
+import secrets
 import gevent
 from gevent.event import Event
 from pygdbmi.gdbcontroller import GdbController
@@ -89,6 +90,7 @@ class SessionManager:
                 self._end_session_if_expired(sid)
 
     def _end_session_if_expired(self, session_id):
+        self.stop_reader(session_id)
         with self.lock:
             session = self.sessions.get(session_id)
             if session is None:
@@ -112,8 +114,8 @@ class SessionManager:
             socketio.emit('session_expired', {
                 'reason': 'Session expired or ended',
             }, room=session_id, namespace='/ws/debug')
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to emit session_expired for %s: %s", session_id, e)
 
     def _reader_loop(self, session_id):
         """Poll GDB output and emit to the session WebSocket room."""
@@ -233,7 +235,10 @@ class SessionManager:
             session = self.sessions.get(session_id)
             if session is None:
                 return False
-            return session.get('ws_token') == ws_token
+            expected = session.get('ws_token')
+            if expected is None:
+                return False
+            return secrets.compare_digest(expected, ws_token)
 
     def _get_session(self, session_id):
         with self.lock:
@@ -328,7 +333,12 @@ class SessionManager:
                 session['last_active'] = time.time()
 
     def _parse_response(self, raw_response: str):
-        """Catch pygdbmi parse errors and return a structured payload instead of crashing."""
+        """Catch pygdbmi parse errors and return a structured payload.
+
+        When GDB is in a bad state (infinite loop, segfault during execution),
+        pygdbmi returns malformed MI tokens. This wrapper catches parse errors
+        and returns a structured error payload without crashing the session.
+        """
         try:
             return gdbmiparser.parse_response(raw_response)
         except Exception as e:
