@@ -1,11 +1,7 @@
-"""Unit tests for the per-session reader greenlet.
-
-The reader greenlet polls GDB output after streaming commands
-(run, continue, step) and emits events to the session's Socket.IO room.
-"""
+"""Unit tests for the per-session reader greenlet."""
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 import sys
 import os
@@ -154,7 +150,6 @@ class TestWebSocketReader(unittest.TestCase):
 
         sid, _ = self.sm.create_session()
 
-        # Mock controller with a response
         mock_controller = MagicMock()
         mock_controller.write.return_value = [{'payload': 'ok'}]
         mock_controller.get_gdb_response.return_value = []
