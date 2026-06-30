@@ -33,6 +33,10 @@ const defaultMockState = {
   sessionError: null,
   createSession: vi.fn(),
   clearSessionError: vi.fn(),
+  streamingLines: [],
+  isStreaming: false,
+  streamingError: null,
+  clearStreamingOutput: vi.fn(),
 };
 
 let mockState = { ...defaultMockState };

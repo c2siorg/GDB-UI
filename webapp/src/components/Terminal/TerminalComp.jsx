@@ -13,10 +13,15 @@ const TerminalComp = () => {
     sessionLoading,
     sessionError,
     createSession,
-    clearSessionError
+    clearSessionError,
+    streamingLines,
+    isStreaming,
+    streamingError,
+    clearStreamingOutput,
   } = DataState();
   const [output, setOutput] = useState("");
   const terminalRef = useRef(null);
+  const streamingEndRef = useRef(null);
 
   const handleCommand = async (command, ...args) => {
     const fullCommand = [command, ...args].join(" ");
@@ -45,6 +50,12 @@ const TerminalComp = () => {
       defaultHandler(terminalOutput);
     }
   }, [commandCount]);
+
+  useEffect(() => {
+    if (streamingEndRef.current) {
+      streamingEndRef.current.scrollTop = streamingEndRef.current.scrollHeight;
+    }
+  }, [streamingLines]);
 
   if (sessionLoading) {
     return (
@@ -93,6 +104,32 @@ const TerminalComp = () => {
         theme="my-custom-theme"
         defaultHandler={defaultHandler}
       />
+      {streamingLines.length > 0 && (
+        <div className="streaming-output">
+          <div className="streaming-header">
+            <span className={`streaming-status ${isStreaming ? "connected" : ""}`}>
+              {isStreaming ? "●" : "○"} Stream
+            </span>
+            <button
+              className="clear-stream-btn"
+              onClick={clearStreamingOutput}
+              title="Clear streaming output"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="streaming-body" ref={streamingEndRef}>
+            {streamingLines.map((line, i) => (
+              <pre key={i} className="stream-line">{line}</pre>
+            ))}
+          </div>
+        </div>
+      )}
+      {streamingError && (
+        <div className="streaming-error">
+          <span>{streamingError}</span>
+        </div>
+      )}
     </div>
   );
 };

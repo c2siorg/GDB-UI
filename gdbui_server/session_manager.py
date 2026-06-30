@@ -106,6 +106,15 @@ class SessionManager:
             shutil.rmtree(os.path.join('output', session_id), ignore_errors=True)
             logger.info("Expired session cleaned up: %s", session_id)
 
+    def _emit_session_expired(self, session_id):
+        try:
+            from main import socketio
+            socketio.emit('session_expired', {
+                'reason': 'Session expired or ended',
+            }, room=session_id, namespace='/ws/debug')
+        except Exception:
+            pass
+
     def _reader_loop(self, session_id):
         """Poll GDB output and emit to the session WebSocket room."""
         stop_event = self.reader_stop_events.get(session_id)
@@ -113,10 +122,19 @@ class SessionManager:
             return
 
         while not stop_event.is_set():
-            session_lock = self._get_session_lock(session_id)
+            try:
+                session_lock = self._get_session_lock(session_id)
+            except RuntimeError:
+                # Session was removed externally (expired or ended)
+                self._emit_session_expired(session_id)
+                break
+
             with session_lock:
                 session = self.sessions.get(session_id)
-                if not session or not session.get('controller'):
+                if not session:
+                    self._emit_session_expired(session_id)
+                    break
+                if not session.get('controller'):
                     break
                 controller = session['controller']
 
