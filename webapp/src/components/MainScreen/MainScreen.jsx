@@ -1,4 +1,3 @@
-import React from "react";
 import "./MainScreen.css";
 import Editor from "@monaco-editor/react";
 import { DataState } from "../../context/DataContext";

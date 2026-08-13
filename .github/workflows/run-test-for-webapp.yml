@@ -34,3 +34,13 @@ jobs:
         run: |
           cd webapp
           npx vitest --coverage.enabled true
+
+      - name: Run ESLint
+        run: |
+          cd webapp
+          npm run lint
+
+      - name: Run production build
+        run: |
+          cd webapp
+          npm run build

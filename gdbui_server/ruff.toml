@@ -1,0 +1,17 @@
+# Ruff config for the GDB-UI Flask server.
+#
+# Rule selection is deliberately bounded: core correctness (E4/E7/E9/F),
+# import sorting, and a few high-value opinionated rules. The noisier rules
+# ruff enables by default (BLE001 blind-except, LOG014, PLW*, S110) are left
+# off — this server legitimately catches broad exceptions to keep debug
+# sessions alive.
+#
+# E402 is ignored deliberately: main.py imports flask_socketio after `app`
+# is created, and wsgi.py must run monkey.patch_all() as its very first
+# statement before importing anything else.
+target-version = "py310"
+line-length = 100
+
+[lint]
+select = ["E4", "E7", "E9", "F", "I001", "PLR0402", "RUF010", "RUF100"]
+ignore = ["E402"]

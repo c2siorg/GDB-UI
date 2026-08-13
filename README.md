@@ -150,6 +150,15 @@ Available V2 endpoints:
 - `POST /v2/add_watchpoint`
 - `POST /v2/delete_breakpoint`
 
+## Frontend
+
+The React webapp (**dark theme by default**, toggleable in the header) serves the following routes:
+
+- `/` — landing page
+- `/login` — authentication screen
+- `/debug` — main debugger (with nested panels: `/debug/threads`, `/debug/breakPoints`, `/debug/memoryMap`, and more)
+- `/demo` — multi-session isolation demo: two independent GDB sessions running side by side (Panel A commands do not affect Panel B)
+
 ## Running Tests
 
 ### Frontend Tests (Vite)
@@ -181,36 +190,7 @@ To run the backend tests, use the following procedure:
 
 ## Contributing
 
-We welcome contributions from the community! To get started:
-
-1. **Fork the repository at** [c2siorg/GDB-UI](https://github.com/c2siorg/GDB-UI).
-2. **Clone your fork:**
-
-    ```sh
-    git clone https://github.com/your-username/GDB-UI.git
-    ```
-
-3. **Create a new branch for your feature or bugfix:**
-
-    ```sh
-    git checkout -b feature-name
-    ```
-
-4. **Make your changes and commit them:**
-
-    ```sh
-    git commit -m "Description of your changes"
-    ```
-
-5. **Push your branch to your fork:**
-
-    ```sh
-    git push origin feature-name
-    ```
-
-6. **Open a pull request** on the main repository.
-
-**Please ensure your code adheres to our coding standards and is thoroughly tested before submitting your pull request.**
+We welcome contributions from the community! See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide on setup, development workflow, checks, and code style.
 
 
 ## Design

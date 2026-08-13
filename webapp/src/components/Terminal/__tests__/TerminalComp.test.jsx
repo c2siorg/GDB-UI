@@ -1,7 +1,7 @@
-import React from "react";
+/* eslint-disable react/prop-types -- the mock below validates nothing real */
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import TerminalComp from "../TerminalComp.jsx";
-import { vi } from "vitest";
+import { vi, beforeEach, test, expect } from "vitest";
 
 // Mock react-terminal to avoid ref/rendering issues in jsdom
 vi.mock("react-terminal", () => ({

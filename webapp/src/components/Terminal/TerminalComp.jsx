@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ReactTerminal } from "react-terminal";
 import { makeRequest } from "../../api";
 import "./Terminal.css";
@@ -7,7 +7,6 @@ import { DataState } from "../../context/DataContext";
 const TerminalComp = () => {
   const {
     terminalOutput,
-    commandPress,
     commandCount,
     sessionId,
     sessionLoading,
@@ -19,7 +18,7 @@ const TerminalComp = () => {
     streamingError,
     clearStreamingOutput,
   } = DataState();
-  const [output, setOutput] = useState("");
+  const [, setOutput] = useState("");
   const terminalRef = useRef(null);
   const streamingEndRef = useRef(null);
 

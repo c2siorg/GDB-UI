@@ -1,13 +1,15 @@
-from flask import Flask, request, jsonify, g
-from flask_cors import CORS
-from session_manager import SessionManager, ensure_exe_extension, sanitize_program_name
-import subprocess
-import os
 import atexit
-import signal
-import sys
 import logging
+import os
+import signal
+import subprocess
+import sys
 import uuid
+
+from flask import Flask, g, jsonify, request
+from flask_cors import CORS
+
+from session_manager import SessionManager, ensure_exe_extension, sanitize_program_name
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -369,7 +371,6 @@ def upload_file():
         # Determine paths
         output_dir = os.path.join('output', session_id)
         os.makedirs(output_dir, exist_ok=True)
-        binary_name = safe_name.replace('.exe', '')
         file_path = os.path.join(output_dir, ensure_exe_extension(safe_name))
 
     # Phase 2: Save file OUTSIDE lock

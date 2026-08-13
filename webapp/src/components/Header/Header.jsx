@@ -1,10 +1,10 @@
-import React from "react";
 import "./Header.css";
 import c2si from "../../assets/c2si.png";
 import { Link } from "react-router-dom";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
+import PropTypes from "prop-types";
 
-const Header = ({ isDarkMode, toggleDarkMode, dark }) => {
+const Header = ({ toggleDarkMode, dark }) => {
   return (
     <div className="header">
       <div className="head">
@@ -25,6 +25,11 @@ const Header = ({ isDarkMode, toggleDarkMode, dark }) => {
       </div>
     </div>
   );
+};
+
+Header.propTypes = {
+  toggleDarkMode: PropTypes.func,
+  dark: PropTypes.bool,
 };
 
 export default Header;

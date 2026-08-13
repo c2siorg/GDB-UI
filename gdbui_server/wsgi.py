@@ -1,4 +1,5 @@
 from gevent import monkey
+
 monkey.patch_all(subprocess=False, select=False, os=False)
 
 from gdbui_server.main import app, socketio

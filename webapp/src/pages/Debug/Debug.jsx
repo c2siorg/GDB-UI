@@ -1,6 +1,4 @@
-import React, { useState, useEffect } from "react";
 import "./Debug.css";
-import Header from "../../components/Header/Header";
 import DebugHeader from "../../components/DebugHeader/DebugHeader";
 import Functions from "../../components/Functions/Functions";
 import MainScreen from "../../components/MainScreen/MainScreen";

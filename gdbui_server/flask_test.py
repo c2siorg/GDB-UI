@@ -5,7 +5,7 @@ from unittest import mock
 
 from flask_testing import TestCase
 
-from main import app, session_manager
+from main import app
 
 
 class TestGDBRoutes(TestCase):

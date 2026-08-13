@@ -1,7 +1,6 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import Functions from "../Functions.jsx";
-import { vi } from "vitest";
+import { vi, test, expect } from "vitest";
 
 vi.mock("../../../context/DataContext.jsx", () => ({
   DataState: () => ({

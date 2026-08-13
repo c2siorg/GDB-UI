@@ -1,10 +1,10 @@
 """Unit tests for the per-session reader greenlet."""
 
-import unittest
-from unittest.mock import patch, MagicMock
-
-import sys
 import os
+import sys
+import unittest
+from unittest.mock import MagicMock, patch
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from session_manager import SessionManager
@@ -146,7 +146,6 @@ class TestWebSocketReader(unittest.TestCase):
 
     def test_execute_starts_reader_for_streaming_commands(self):
         """execute() should start the reader for streaming commands."""
-        from session_manager import STREAMING_COMMANDS
 
         sid, _ = self.sm.create_session()
 

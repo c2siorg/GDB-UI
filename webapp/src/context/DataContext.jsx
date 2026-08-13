@@ -1,4 +1,5 @@
-import React, {
+/* eslint-disable react/prop-types -- plain-JS codebase, no PropTypes convention */
+import {
   createContext,
   useState,
   useEffect,

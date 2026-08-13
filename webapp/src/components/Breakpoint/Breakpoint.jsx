@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./Breakpoint.css";
 
 import { ToastContainer, toast } from "react-toastify";

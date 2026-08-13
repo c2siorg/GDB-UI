@@ -1,9 +1,8 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import App from "./App.jsx";
 import { DataProvider } from "./context/DataContext"; // Import the DataProvider
-import { vi } from "vitest";
+import { vi, test, expect } from "vitest";
 
 vi.mock("./hooks/useSession", () => ({
   default: () => ({

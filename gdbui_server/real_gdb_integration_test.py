@@ -6,12 +6,13 @@ Prerequisites:
 - Flask server running with threaded=True
 """
 
-import requests
-import threading
-import time
 import os
 import subprocess
+import threading
+import time
 import unittest
+
+import requests
 
 BASE_URL = "http://localhost:10000"
 

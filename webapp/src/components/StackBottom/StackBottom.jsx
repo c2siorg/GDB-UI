@@ -1,4 +1,3 @@
-import React from "react";
 import "./StackBottom.css";
 
 const StackBottom = () => {

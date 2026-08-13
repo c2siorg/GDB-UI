@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+/* eslint-disable react/prop-types -- demo page, props not validated */
+import { useState, useEffect, useRef, useCallback } from "react";
 import api from "../../api";
 import "./Demo.css";
 
@@ -30,7 +31,6 @@ const getMockResponse = (command) => {
         return `Hardware watchpoint 4: ${v}`;
     }
     if (cmd.startsWith("print ")) {
-        const v = cmd.replace("print ", "");
         return `$1 = 42`;
     }
     return `(gdb) ${command}\nNo symbol table is loaded.`;
@@ -91,7 +91,7 @@ const DebugPanel = ({ label, isMockMode }) => {
         if (!isMockMode) {
             try {
                 await api.post("/end_session", { session_id: sid });
-            } catch (e) { }
+            } catch (e) { /* best-effort cleanup */ }
         }
         if (sessionIdRef.current === sid) {
             sessionIdRef.current = null;

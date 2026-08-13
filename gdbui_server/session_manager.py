@@ -1,15 +1,16 @@
-import uuid
-import threading
-import time
+import logging
 import os
 import re
-import shutil
-import logging
 import secrets
+import shutil
+import threading
+import time
+import uuid
+
 import gevent
 from gevent.event import Event
+from pygdbmi import gdbmiparser
 from pygdbmi.gdbcontroller import GdbController
-import pygdbmi.gdbmiparser as gdbmiparser
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ class SessionManager:
             if time.time() - session['last_active'] <= self.session_ttl:
                 return
             session = self.sessions.pop(session_id)
-            lock = self.session_locks.pop(session_id, None)
+            self.session_locks.pop(session_id, None)
         if session and session['controller']:
             try:
                 session['controller'].exit()
@@ -155,7 +156,7 @@ class SessionManager:
             for response in responses:
                 try:
                     # Late import avoids circular dependency with main.py
-                    from main import socketio  # noqa: F811
+                    from main import socketio
                     socketio.emit(
                         'gdb_output', response,
                         room=session_id, namespace='/ws/debug',
@@ -261,7 +262,7 @@ class SessionManager:
         self.stop_reader(session_id)
         with self.lock:
             session = self.sessions.pop(session_id, None)
-            lock = self.session_locks.pop(session_id, None)
+            self.session_locks.pop(session_id, None)
         if session and session['controller']:
             try:
                 session['controller'].exit()
@@ -388,7 +389,7 @@ class SessionManager:
                     self.start_reader(session_id)
             except Exception as e:
                 logger.error("pygdbmi write/parse error: %s", e)
-                err_payload = self._parse_response(f"Parser Error: {str(e)}")
+                err_payload = self._parse_response(f"Parser Error: {e!s}")
                 response = [err_payload]
 
         if response is None:

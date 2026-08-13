@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 import "./Threads.css";
 import api from "../../../api";
 import { DataContext } from "../../../context/DataContext";

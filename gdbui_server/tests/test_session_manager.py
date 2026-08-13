@@ -1,14 +1,13 @@
-import unittest
+import os
+import sys
 import threading
 import time
-from unittest import mock
+import unittest
 from unittest.mock import MagicMock, patch
 
-import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from session_manager import SessionManager, MAX_SESSIONS, validate_command, sanitize_program_name
+from session_manager import MAX_SESSIONS, SessionManager, sanitize_program_name, validate_command
 
 
 class TestSessionManager(unittest.TestCase):

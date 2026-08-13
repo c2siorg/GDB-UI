@@ -10,17 +10,17 @@ Unlike test_websocket_reader.py (which patches socketio.emit at the module level
 these tests use the REAL flask-socketio event loop and dispatch infrastructure.
 """
 
+import os
+import sys
 import unittest
 from unittest.mock import MagicMock, patch
-import sys
-import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import gevent
 from flask_socketio import SocketIOTestClient
 
-import main  # noqa: E402 — registers all handlers on main.socketio
+import main
 from session_manager import SessionManager
 
 

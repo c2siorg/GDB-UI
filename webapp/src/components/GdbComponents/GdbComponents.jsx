@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import "./GdbComponents.css";
+import PropTypes from "prop-types";
 
 const Platform = ({ setActive, active }) => (
   <>
@@ -69,6 +70,11 @@ const GdbComponents = () => {
       </div>
     </div>
   );
+};
+
+Platform.propTypes = {
+  active: PropTypes.string,
+  setActive: PropTypes.func,
 };
 
 export default GdbComponents;
