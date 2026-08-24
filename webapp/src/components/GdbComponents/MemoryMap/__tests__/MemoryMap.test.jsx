@@ -5,8 +5,8 @@ import { vi } from "vitest";
 const state = vi.hoisted(() => ({
   value: {
     refresh: false,
-    functions: [],
-    setFunctions: vi.fn(),
+    memoryMap: "",
+    setMemoryMap: vi.fn(),
     sessionId: "test-session-123",
     sessionLoading: false,
     sessionError: null,
@@ -15,22 +15,22 @@ const state = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("../../../context/DataContext.jsx", () => ({
+vi.mock("../../../../context/DataContext.jsx", () => ({
   DataState: () => state.value,
 }));
-vi.mock("../../../api", () => ({
+vi.mock("../../../../api", () => ({
   makeRequest: vi.fn(),
 }));
 
-import { makeRequest } from "../../../api";
-import Functions from "../Functions.jsx";
+import { makeRequest } from "../../../../api";
+import MemoryMap from "../MemoryMap.jsx";
 
-describe("Functions", () => {
+describe("MemoryMap", () => {
   beforeEach(() => {
     state.value = {
       refresh: false,
-      functions: [],
-      setFunctions: vi.fn(),
+      memoryMap: "",
+      setMemoryMap: vi.fn(),
       sessionId: "test-session-123",
       sessionLoading: false,
       sessionError: null,
@@ -40,20 +40,27 @@ describe("Functions", () => {
     makeRequest.mockReset();
   });
 
-  test("renders Functions heading with active session", () => {
-    render(<Functions />);
-    expect(screen.getByText(/Functions/i)).toBeInTheDocument();
+  test("falls back to static sample data when memoryMap is empty", () => {
+    render(<MemoryMap />);
+    // The 8 sample rows share the same address prefix.
+    expect(screen.getAllByText(/0x7fffffffe270/)).toHaveLength(8);
+  });
+
+  test("renders the fetched memory map when present", () => {
+    state.value.memoryMap = "0x00400000: 0x00 0x01";
+    render(<MemoryMap />);
+    expect(screen.getByText("0x00400000: 0x00 0x01")).toBeInTheDocument();
   });
 
   test("shows loading state while initializing", () => {
     state.value.sessionLoading = true;
-    render(<Functions />);
+    render(<MemoryMap />);
     expect(screen.getByText("Initializing debug session...")).toBeInTheDocument();
   });
 
   test("shows error banner and starts a new session", () => {
     state.value.sessionError = "Session failed";
-    render(<Functions />);
+    render(<MemoryMap />);
     expect(screen.getByText("Session failed")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Start New Session"));
     expect(state.value.clearSessionError).toHaveBeenCalled();
@@ -62,44 +69,37 @@ describe("Functions", () => {
 
   test("shows no-session state and starts a debug session", () => {
     state.value.sessionId = null;
-    render(<Functions />);
+    render(<MemoryMap />);
     expect(screen.getByText("No active session.")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Start Debug Session"));
     expect(state.value.createSession).toHaveBeenCalled();
   });
 
-  test("fetches functions when refresh fires with a session", async () => {
+  test("fetches memory map when refresh fires with a session", async () => {
     state.value.refresh = true;
-    state.value.setFunctions = vi.fn((v) => {
-      state.value.functions = v;
+    state.value.setMemoryMap = vi.fn((v) => {
+      state.value.memoryMap = v;
     });
-    makeRequest.mockResolvedValue({ data: { result: "fn-data" } });
+    makeRequest.mockResolvedValue({ data: { result: "mem-data" } });
 
-    render(<Functions />);
+    render(<MemoryMap />);
 
     await waitFor(() =>
       expect(makeRequest).toHaveBeenCalledWith(
-        "/get_locals",
+        "/memory_map",
         { name: "program" },
         "test-session-123"
       )
     );
     await waitFor(() =>
-      expect(state.value.setFunctions).toHaveBeenCalledWith("fn-data")
+      expect(state.value.setMemoryMap).toHaveBeenCalledWith("mem-data")
     );
-  });
-
-  test("does not fetch when there is no session", async () => {
-    state.value.refresh = true;
-    state.value.sessionId = null;
-    render(<Functions />);
-    await waitFor(() => expect(makeRequest).not.toHaveBeenCalled());
   });
 
   test("swallows fetch errors", async () => {
     state.value.refresh = true;
     makeRequest.mockRejectedValue(new Error("boom"));
-    render(<Functions />);
+    render(<MemoryMap />);
     await waitFor(() => expect(makeRequest).toHaveBeenCalled());
   });
 });

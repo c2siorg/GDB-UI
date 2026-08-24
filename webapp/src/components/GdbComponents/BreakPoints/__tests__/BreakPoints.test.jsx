@@ -5,8 +5,8 @@ import { vi } from "vitest";
 const state = vi.hoisted(() => ({
   value: {
     refresh: false,
-    functions: [],
-    setFunctions: vi.fn(),
+    infoBreakpointData: "",
+    setInfoBreakpointData: vi.fn(),
     sessionId: "test-session-123",
     sessionLoading: false,
     sessionError: null,
@@ -15,22 +15,22 @@ const state = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("../../../context/DataContext.jsx", () => ({
+vi.mock("../../../../context/DataContext.jsx", () => ({
   DataState: () => state.value,
 }));
-vi.mock("../../../api", () => ({
+vi.mock("../../../../api", () => ({
   makeRequest: vi.fn(),
 }));
 
-import { makeRequest } from "../../../api";
-import Functions from "../Functions.jsx";
+import { makeRequest } from "../../../../api";
+import BreakPoints from "../BreakPoints.jsx";
 
-describe("Functions", () => {
+describe("BreakPoints", () => {
   beforeEach(() => {
     state.value = {
       refresh: false,
-      functions: [],
-      setFunctions: vi.fn(),
+      infoBreakpointData: "",
+      setInfoBreakpointData: vi.fn(),
       sessionId: "test-session-123",
       sessionLoading: false,
       sessionError: null,
@@ -40,20 +40,21 @@ describe("Functions", () => {
     makeRequest.mockReset();
   });
 
-  test("renders Functions heading with active session", () => {
-    render(<Functions />);
-    expect(screen.getByText(/Functions/i)).toBeInTheDocument();
+  test("renders breakpoint data when present", () => {
+    state.value.infoBreakpointData = "1 breakpoint, keep y";
+    render(<BreakPoints />);
+    expect(screen.getByText("1 breakpoint, keep y")).toBeInTheDocument();
   });
 
   test("shows loading state while initializing", () => {
     state.value.sessionLoading = true;
-    render(<Functions />);
+    render(<BreakPoints />);
     expect(screen.getByText("Initializing debug session...")).toBeInTheDocument();
   });
 
   test("shows error banner and starts a new session", () => {
     state.value.sessionError = "Session failed";
-    render(<Functions />);
+    render(<BreakPoints />);
     expect(screen.getByText("Session failed")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Start New Session"));
     expect(state.value.clearSessionError).toHaveBeenCalled();
@@ -62,44 +63,37 @@ describe("Functions", () => {
 
   test("shows no-session state and starts a debug session", () => {
     state.value.sessionId = null;
-    render(<Functions />);
+    render(<BreakPoints />);
     expect(screen.getByText("No active session.")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Start Debug Session"));
     expect(state.value.createSession).toHaveBeenCalled();
   });
 
-  test("fetches functions when refresh fires with a session", async () => {
+  test("fetches breakpoints when refresh fires with a session", async () => {
     state.value.refresh = true;
-    state.value.setFunctions = vi.fn((v) => {
-      state.value.functions = v;
+    state.value.setInfoBreakpointData = vi.fn((v) => {
+      state.value.infoBreakpointData = v;
     });
-    makeRequest.mockResolvedValue({ data: { result: "fn-data" } });
+    makeRequest.mockResolvedValue({ data: { result: "bp-data" } });
 
-    render(<Functions />);
+    render(<BreakPoints />);
 
     await waitFor(() =>
       expect(makeRequest).toHaveBeenCalledWith(
-        "/get_locals",
+        "/info_breakpoints",
         { name: "program" },
         "test-session-123"
       )
     );
     await waitFor(() =>
-      expect(state.value.setFunctions).toHaveBeenCalledWith("fn-data")
+      expect(state.value.setInfoBreakpointData).toHaveBeenCalledWith("bp-data")
     );
-  });
-
-  test("does not fetch when there is no session", async () => {
-    state.value.refresh = true;
-    state.value.sessionId = null;
-    render(<Functions />);
-    await waitFor(() => expect(makeRequest).not.toHaveBeenCalled());
   });
 
   test("swallows fetch errors", async () => {
     state.value.refresh = true;
     makeRequest.mockRejectedValue(new Error("boom"));
-    render(<Functions />);
+    render(<BreakPoints />);
     await waitFor(() => expect(makeRequest).toHaveBeenCalled());
   });
 });
