@@ -1,41 +1,46 @@
 .functions-parent {
   display: flex;
-  height: 100vh;
-  padding: 10px;
+  height: auto;
+  min-height: 0;
+  padding: 0.625rem;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
   border: 1px solid var(--Gray-2, #4f4f4f);
-
-  /* background: #1e1e1e; */
+  flex-wrap: wrap;
 }
+
 .functions-heading {
   display: flex;
-  width: 302px;
-  padding: 6px 12px;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
   background: var(--primary-orange, #e88f40);
 }
+
 .functions {
-  /* width: 100%; */
   display: flex;
-  padding: 10px;
-  height: 87vh;
-  max-width: 20vw;
+  padding: 0.625rem;
+  max-height: 80vh;
+  height: auto;
+  min-width: 220px;
+  max-width: 400px;
+  width: 100%;
   flex-direction: column;
   align-items: flex-start;
-  gap: 11px;
+  gap: 0.688rem;
   flex-shrink: 0;
   border: 1px solid var(--Gray-2, #4f4f4f);
-  overflow-y: scroll;
-  overflow-x: scroll;
+  overflow-y: auto;
+  overflow-x: auto;
 }
+
 .functions a {
-  display: block; /* Ensure the anchor tags are block-level elements */
-  word-wrap: break-word; /* Allow long words to break and wrap onto the next line */
-  overflow-wrap: break-word; /* For better compatibility */
-  margin-bottom: 5px; /* Space between multiple links */
-  text-decoration: none; /* Optional: remove underline from links */
+  display: block;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  margin-bottom: 0.3125rem;
+  text-decoration: none;
 }
