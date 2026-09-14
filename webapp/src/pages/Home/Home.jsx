@@ -52,6 +52,13 @@ const Home = () => {
           >
             Get Started
           </button>
+          <button
+            id="multi-session-btn"
+            className="btn-secondary"
+            onClick={() => navigate("/multi-session")}
+          >
+            Multi-Session Debugger
+          </button>
           <a
             id="github-link"
             className="btn-secondary"

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import "./Breakpoint.css";
 
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 import { makeRequest } from "../../api";
 import { DataState } from "../../context/DataContext";
 
@@ -101,18 +100,6 @@ const Breakpoint = () => {
           Add
         </button>
       </div>
-      <ToastContainer
-        position="bottom-right"
-        autoClose={1000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
     </div>
   );
 };

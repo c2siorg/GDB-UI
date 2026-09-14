@@ -1,8 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import { ReactTerminal } from "react-terminal";
 import { makeRequest } from "../../api";
 import "./Terminal.css";
 import { DataState } from "../../context/DataContext";
+
+const MemoizedTerminal = memo(({ defaultHandler }) => {
+  return (
+    <ReactTerminal
+      themes={{
+        "my-custom-theme": {
+          themeBGColor: "#000",
+          themeToolbarColor: "#000",
+          themeColor: "#00FF00",
+          themePromptColor: "#a917a8",
+        },
+      }}
+      theme="my-custom-theme"
+      defaultHandler={defaultHandler}
+    />
+  );
+});
 
 const TerminalComp = () => {
   const {
@@ -20,10 +37,9 @@ const TerminalComp = () => {
     clearStreamingOutput,
   } = DataState();
   const [output, setOutput] = useState("");
-  const terminalRef = useRef(null);
   const streamingEndRef = useRef(null);
 
-  const handleCommand = async (command, ...args) => {
+  const handleCommand = useCallback(async (command, ...args) => {
     const fullCommand = [command, ...args].join(" ");
     try {
       const { data } = await makeRequest("/gdb_command", {
@@ -34,13 +50,13 @@ const TerminalComp = () => {
     } catch (error) {
       return "Error executing command";
     }
-  };
+  }, [sessionId]);
 
-  const defaultHandler = async (command, ...args) => {
+  const defaultHandler = useCallback(async (command, ...args) => {
     const result = await handleCommand(command, ...args);
     setOutput(result);
     return result;
-  };
+  }, [handleCommand]);
 
   useEffect(() => {
     if (terminalOutput) {
@@ -88,19 +104,7 @@ const TerminalComp = () => {
 
   return (
     <div className="terminal">
-      <ReactTerminal
-        ref={terminalRef}
-        themes={{
-          "my-custom-theme": {
-            themeBGColor: "#000",
-            themeToolbarColor: "#000",
-            themeColor: "#00FF00",
-            themePromptColor: "#a917a8",
-          },
-        }}
-        theme="my-custom-theme"
-        defaultHandler={defaultHandler}
-      />
+      <MemoizedTerminal defaultHandler={defaultHandler} />
       {(isStreaming || streamingLines.length > 0) && (
         <div className="streaming-output">
           <div className="streaming-header">

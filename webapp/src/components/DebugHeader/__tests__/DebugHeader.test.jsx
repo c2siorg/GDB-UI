@@ -6,24 +6,24 @@ import { DataContext } from "../../../context/DataContext.jsx";
 describe("DebugHeader Component", () => {
   test("renders DebugHeader component with icons and filename", () => {
     render(
-      <DataContext.Provider value={{ refresh: false, setRefresh: vi.fn() }}>
+      <DataContext.Provider value={{ filename: "program.cpp", compiling: false, compileCode: vi.fn() }}>
         <DebugHeader />
       </DataContext.Provider>
     );
 
-    const filenameContent = screen.getByText(/filename/i);
+    const filenameContent = screen.getByText(/program.cpp/i);
     expect(filenameContent).toBeInTheDocument();
 
     const saveContent = screen.getByRole("button", { name: /save/i });
     expect(saveContent).toBeInTheDocument();
   });
 
-  test("clicking Save button triggers save action", () => {
-    const mockSetRefresh = vi.fn();
+  test("clicking Save button triggers save action", async () => {
+    const mockCompileCode = vi.fn().mockResolvedValue({});
 
     render(
       <DataContext.Provider
-        value={{ refresh: false, setRefresh: mockSetRefresh }}
+        value={{ filename: "program.cpp", compiling: false, compileCode: mockCompileCode }}
       >
         <DebugHeader />
       </DataContext.Provider>
@@ -33,24 +33,21 @@ describe("DebugHeader Component", () => {
     expect(saveButton).toBeInTheDocument();
 
     fireEvent.click(saveButton);
-    expect(mockSetRefresh).toHaveBeenCalledWith(true);
+    expect(mockCompileCode).toHaveBeenCalled();
   });
 
-  test("clicking Save button when refresh is true shows 'Saving..'", () => {
-    const mockSetRefresh = vi.fn();
+  test("clicking Save button when compiling is true shows 'Compiling...'", () => {
+    const mockCompileCode = vi.fn();
 
     render(
       <DataContext.Provider
-        value={{ refresh: true, setRefresh: mockSetRefresh }}
+        value={{ filename: "program.cpp", compiling: true, compileCode: mockCompileCode }}
       >
         <DebugHeader />
       </DataContext.Provider>
     );
 
-    const saveButton = screen.getByRole("button", { name: /saving\.\./i });
+    const saveButton = screen.getByRole("button", { name: /compiling\.\.\./i });
     expect(saveButton).toBeInTheDocument();
-
-    fireEvent.click(saveButton);
-    expect(mockSetRefresh).toHaveBeenCalledWith(false);
   });
 });

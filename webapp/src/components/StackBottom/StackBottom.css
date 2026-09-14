@@ -1,25 +1,27 @@
 .stackbottom-container {
   display: flex;
-  width: 190px;
+  width: 100%;
   height: 159px;
   padding: 15px 20px;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 10px;
   border: 1px solid var(--Gray-2, #4f4f4f);
-  /* background: #1e1e1e; */
+  box-sizing: border-box;
 }
 .stackbottom-maincomponent {
-  overflow-x: scroll;
-  width: 190px;
+  overflow-x: auto;
+  width: 100%;
   height: 139px;
+  box-sizing: border-box;
 }
 .stackbottom-heading {
   display: flex;
-  width: 169px;
+  width: 100%;
   padding: 6px 12px;
   justify-content: center;
   align-items: center;
   gap: 10px;
   background: var(--primary-orange, #e88f40);
+  box-sizing: border-box;
 }

@@ -1,46 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import api from "../../api";
-import "./Demo.css";
+import "./MultiSession.css";
 
-const MOCK_RESPONSES = {
-    "info locals": "i = 5\nsum = 15\narr = {1, 2, 3, 4, 5}",
-    "bt": "#0  main () at program.cpp:12\n#1  0x00007ffff7a2d830 in __libc_start_main ()\n#2  0x0000000000400499 in _start ()",
-    "info breakpoints": "Num  Type        Disp Enb Address            What\n1    breakpoint  keep y   0x0000000000400526 in main at program.cpp:8\n2    breakpoint  keep y   0x0000000000400540 in main at program.cpp:12",
-    "info registers": "rax  0x5   5\nrbx  0x0   0\nrcx  0xf   15\nrdx  0x7   7\nrsp  0x7fffffffe260\nrbp  0x7fffffffe280",
-    "info threads": "  Id   Target Id         Frame\n* 1    Thread 0x7ffff7a2d740  main () at program.cpp:12",
-    "next": "13\t    sum += arr[i];",
-    "step": "Stepped into: add(int, int) at math.cpp:5",
-    "continue": "Continuing.\nBreakpoint 2, main () at program.cpp:12\n12\t    int result = sum;",
-    "run": "Starting program: /output/program.exe\nBreakpoint 1, main () at program.cpp:8\n8\t    int sum = 0;",
-};
-
-const getMockResponse = (command) => {
-    const cmd = command.toLowerCase().trim();
-    for (const [key, value] of Object.entries(MOCK_RESPONSES)) {
-        if (cmd.startsWith(key) || cmd === key) {
-            return value;
-        }
-    }
-    if (cmd.startsWith("break ")) {
-        const loc = cmd.replace("break ", "");
-        return `Breakpoint 3 at 0x400550: file program.cpp, line ${loc}.`;
-    }
-    if (cmd.startsWith("watch ")) {
-        const v = cmd.replace("watch ", "");
-        return `Hardware watchpoint 4: ${v}`;
-    }
-    if (cmd.startsWith("print ")) {
-        const v = cmd.replace("print ", "");
-        return `$1 = 42`;
-    }
-    return `(gdb) ${command}\nNo symbol table is loaded.`;
-};
-
-const DebugPanel = ({ label, isMockMode }) => {
+const DebugPanel = ({ label }) => {
     const [sessionId, setSessionId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [command, setCommand] = useState("");
+    const [code, setCode] = useState("");
+    const [compiling, setCompiling] = useState(false);
     const [logs, setLogs] = useState([]);
     const sessionIdRef = useRef(null);
     const logsEndRef = useRef(null);
@@ -49,15 +17,6 @@ const DebugPanel = ({ label, isMockMode }) => {
         setLoading(true);
         setError(null);
         setLogs([]);
-
-        if (isMockMode) {
-            const mockId = "mock-" + Math.random().toString(36).substring(2, 10);
-            setSessionId(mockId);
-            sessionIdRef.current = mockId;
-            setLoading(false);
-            setLogs([{ type: "system", text: `Mock session created: ${mockId}` }]);
-            return;
-        }
 
         try {
             const { data } = await api.post("/create_session");
@@ -84,20 +43,18 @@ const DebugPanel = ({ label, isMockMode }) => {
         } finally {
             setLoading(false);
         }
-    }, [isMockMode]);
+    }, []);
 
     const endSession = useCallback(async (sid) => {
         if (!sid) return;
-        if (!isMockMode) {
-            try {
-                await api.post("/end_session", { session_id: sid });
-            } catch (e) { }
-        }
+        try {
+            await api.post("/end_session", { session_id: sid });
+        } catch (e) { }
         if (sessionIdRef.current === sid) {
             sessionIdRef.current = null;
             setSessionId(null);
         }
-    }, [isMockMode]);
+    }, []);
 
     useEffect(() => {
         createSession();
@@ -107,10 +64,10 @@ const DebugPanel = ({ label, isMockMode }) => {
                 endSession(currentId);
             }
         };
-    }, [isMockMode, createSession, endSession]);
+    }, [createSession, endSession]);
 
     useEffect(() => {
-        logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        logsEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
     }, [logs]);
 
     const handleResetSession = async () => {
@@ -119,6 +76,31 @@ const DebugPanel = ({ label, isMockMode }) => {
             await endSession(currentId);
         }
         await createSession();
+    };
+
+    const handleCompile = async () => {
+        const currentId = sessionIdRef.current;
+        if (!currentId) {
+            setLogs((prev) => [...prev, { type: "error", text: "No active session." }]);
+            return;
+        }
+        if (!code.trim()) {
+            setLogs((prev) => [...prev, { type: "error", text: "Write a program before compiling." }]);
+            return;
+        }
+        setCompiling(true);
+        try {
+            const { data } = await api.post("/compile", {
+                code,
+                name: "program.cpp",
+                session_id: currentId,
+            });
+            setLogs((prev) => [...prev, { type: "system", text: data.success ? "Program compiled" : `Compile failed: ${data.error || "unknown"}` }]);
+        } catch (err) {
+            setLogs((prev) => [...prev, { type: "error", text: `Compile request failed: ${err.message}` }]);
+        } finally {
+            setCompiling(false);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -134,13 +116,6 @@ const DebugPanel = ({ label, isMockMode }) => {
         const cmd = command.trim();
         setCommand("");
         setLogs((prev) => [...prev, { type: "input", text: `(gdb) ${cmd}` }]);
-
-        if (isMockMode) {
-            await new Promise((r) => setTimeout(r, 200 + Math.random() * 300));
-            const result = getMockResponse(cmd);
-            setLogs((prev) => [...prev, { type: "output", text: result }]);
-            return;
-        }
 
         try {
             const { data } = await api.post("/gdb_command", {
@@ -166,47 +141,66 @@ const DebugPanel = ({ label, isMockMode }) => {
     };
 
     return (
-        <div className="demo-panel">
-            <div className="demo-panel-header">
+        <div className="multi-session-panel">
+            <div className="multi-session-panel-header">
                 <h3>{label}</h3>
-                <button className="demo-reset-btn" onClick={handleResetSession} disabled={loading}>
+                <button className="multi-session-reset-btn" onClick={handleResetSession} disabled={loading}>
                     Reset Session
                 </button>
             </div>
             {sessionId && (
-                <div className="demo-session-id">
+                <div className="multi-session-session-id">
                     Session: <span>{sessionId}</span>
                 </div>
             )}
             
             {loading && (
-                <div className="demo-status demo-loading">
+                <div className="multi-session-status multi-session-loading">
                     <div className="pulse-spinner" style={{ width: "20px", height: "20px" }}></div>
                     <span>Creating session...</span>
                 </div>
             )}
             
             {error && (
-                <div className="demo-status demo-error">
+                <div className="multi-session-status multi-session-error">
                     <span className="error-icon">⚠️</span>
                     <p>{error}</p>
-                    <button className="demo-recreate-btn" onClick={handleResetSession}>
+                    <button className="multi-session-recreate-btn" onClick={handleResetSession}>
                         Recreate Session
                     </button>
                 </div>
             )}
 
-            <div className="demo-logs">
+            <div className="multi-session-code">
+                <textarea
+                    className="multi-session-code-input"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="// Write your C++ program, then click Compile."
+                    rows={6}
+                    spellCheck={false}
+                    disabled={loading || !!error}
+                />
+                <button
+                    className="multi-session-compile-btn"
+                    onClick={handleCompile}
+                    disabled={compiling || loading || !!error}
+                >
+                    {compiling ? "Compiling..." : "Compile"}
+                </button>
+            </div>
+
+            <div className="multi-session-logs">
                 {logs.map((log, i) => (
-                    <div key={i} className={`demo-log demo-log-${log.type}`}>
+                    <div key={i} className={`multi-session-log multi-session-log-${log.type}`}>
                         <pre>{log.text}</pre>
                     </div>
                 ))}
                 <div ref={logsEndRef} />
             </div>
 
-            <form className="demo-input-form" onSubmit={handleSubmit}>
-                <span className="demo-prompt">(gdb)</span>
+            <form className="multi-session-input-form" onSubmit={handleSubmit}>
+                <span className="multi-session-prompt">(gdb)</span>
                 <input
                     type="text"
                     value={command}
@@ -220,47 +214,26 @@ const DebugPanel = ({ label, isMockMode }) => {
     );
 };
 
-const Demo = () => {
-    const [isMockMode, setIsMockMode] = useState(true);
-
+const MultiSession = () => {
     return (
-        <div className="demo-container">
-            <div className="demo-title-bar">
-                <h1>Multi-User Session Demo</h1>
-                <div className="demo-mode-toggle">
-                    <label className="demo-switch">
-                        <input
-                            type="checkbox"
-                            checked={!isMockMode}
-                            onChange={() => setIsMockMode(!isMockMode)}
-                        />
-                        <span className="demo-slider"></span>
-                    </label>
-                    <span className="demo-mode-label">
-                        {isMockMode ? "MOCK" : "LIVE"}
-                    </span>
-                </div>
+        <div className="multi-session-container">
+            <div className="multi-session-title-bar">
+                <h1>Multi-User Session Debugger</h1>
             </div>
 
-            {isMockMode && (
-                <div className="demo-mock-banner">
-                    MOCK MODE — Simulated GDB responses. Toggle to LIVE to connect to the Flask backend.
-                </div>
-            )}
-
-            <p className="demo-description">
+            <p className="multi-session-description">
                 Each panel runs an independent GDB session. Commands in Panel A do not affect Panel B.
-                This proves session isolation works correctly.
+                This proves session isolation works correctly. Write a program, compile it, then debug.
             </p>
 
-            <div className="demo-panels">
-                <DebugPanel label="Panel A" isMockMode={isMockMode} />
-                <DebugPanel label="Panel B" isMockMode={isMockMode} />
+            <div className="multi-session-panels">
+                <DebugPanel label="Panel A" />
+                <DebugPanel label="Panel B" />
             </div>
 
-            <div className="demo-hints">
+            <div className="multi-session-hints">
                 <h4>Try these commands:</h4>
-                <div className="demo-hint-chips">
+                <div className="multi-session-hint-chips">
                     <code>run</code>
                     <code>break 10</code>
                     <code>next</code>
@@ -278,4 +251,4 @@ const Demo = () => {
     );
 };
 
-export default Demo;
+export default MultiSession;

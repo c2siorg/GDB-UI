@@ -3,34 +3,34 @@
   height: 100vh;
   padding: 10px;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 10px;
   border: 1px solid var(--Gray-2, #4f4f4f);
-
-  /* background: #1e1e1e; */
+  box-sizing: border-box;
 }
 .functions-heading {
   display: flex;
-  width: 302px;
+  width: 100%;
   padding: 6px 12px;
   justify-content: center;
   align-items: center;
   gap: 10px;
   background: var(--primary-orange, #e88f40);
+  box-sizing: border-box;
 }
 .functions {
-  /* width: 100%; */
   display: flex;
   padding: 10px;
   height: 87vh;
-  max-width: 20vw;
+  width: 100%;
   flex-direction: column;
   align-items: flex-start;
   gap: 11px;
   flex-shrink: 0;
   border: 1px solid var(--Gray-2, #4f4f4f);
-  overflow-y: scroll;
-  overflow-x: scroll;
+  overflow-y: auto;
+  overflow-x: auto;
+  box-sizing: border-box;
 }
 .functions a {
   display: block; /* Ensure the anchor tags are block-level elements */

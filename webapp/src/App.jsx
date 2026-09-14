@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import Debug from "./pages/Debug/Debug";
-import Demo from "./pages/Demo/Demo";
 import Home from "./pages/Home/Home";
 import Login from "./pages/Login/Login";
 import Threads from "./components/GdbComponents/Threads/Threads";
@@ -9,9 +8,12 @@ import LocalVariable from "./components/GdbComponents/LocalVariable/LocalVariabl
 import Context from "./components/GdbComponents/Context/Context";
 import MemoryMap from "./components/GdbComponents/MemoryMap/MemoryMap";
 import BreakPoints from "./components/GdbComponents/BreakPoints/BreakPoints";
+import MultiSession from "./pages/MultiSession/MultiSession";
 import Footer from "./components/Footer/Footer";
 import Header from "./components/Header/Header";
 import { DataState } from "./context/DataContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const App = () => {
   const { setDark, dark, isDarkMode, setDarkMode } = DataState();
@@ -40,11 +42,12 @@ const App = () => {
           <Route path="memoryMap" element={<MemoryMap />} />
           <Route path="breakPoints" element={<BreakPoints />} />
         </Route>
-        <Route path="demo" element={<Demo />} />
+        <Route path="multi-session" element={<MultiSession />} />
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
       </Routes>
       <Footer />
+      <ToastContainer position="bottom-right" />
     </div>
   );
 };

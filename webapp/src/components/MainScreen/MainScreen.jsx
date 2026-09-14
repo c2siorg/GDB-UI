@@ -4,19 +4,17 @@ import Editor from "@monaco-editor/react";
 import { DataState } from "../../context/DataContext";
 
 const MainScreen = () => {
-  const { isDarkMode } = DataState();
+  const { isDarkMode, code, setCode } = DataState();
   return (
-    <div>
-      MainScreen
-      <div className="mainScreen">
-        <Editor
-          height="90vh"
-          className="mainScreen"
-          defaultLanguage="cpp"
-          defaultValue="// some comment"
-          theme={isDarkMode === "dark" ? "vs-dark" : "vs"}
-        />
-      </div>
+    <div className="mainScreen">
+      <Editor
+        height="90vh"
+        className="mainScreen"
+        defaultLanguage="cpp"
+        value={code}
+        onChange={(val) => setCode(val || "")}
+        theme={isDarkMode === "dark" ? "vs-dark" : "vs"}
+      />
     </div>
   );
 };

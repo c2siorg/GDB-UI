@@ -18,4 +18,8 @@ test("renders Header component", () => {
   const loginLink = getByText("Login");
   expect(loginLink).toBeInTheDocument();
   expect(loginLink).toHaveAttribute("href", "/login");
+
+  const homeLink = getByText("Home");
+  expect(homeLink).toBeInTheDocument();
+  expect(homeLink.closest("a")).toHaveAttribute("href", "/");
 });

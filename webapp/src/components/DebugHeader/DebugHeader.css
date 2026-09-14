@@ -23,16 +23,18 @@ body {
   display: flex;
   justify-content: center;
   margin: 0 auto;
-
-  padding-bottom: 20px;
+  padding: 0 16px 20px 16px;
+  width: min(100%, 1440px);
+  box-sizing: border-box;
 }
 .debug-header {
   display: flex;
-  width: 90vw;
+  width: 100%;
   padding: 10px;
   justify-content: space-between;
   align-items: center;
   background: var(--Gray-1, #333);
+  box-sizing: border-box;
 }
 [data-theme="light"] .debug-header {
   background-color: var(--component-light-background);
@@ -86,6 +88,16 @@ body {
 
 [data-theme="light"] .icon:hover {
   border: 2px solid black;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
 }
 
 .save-button {

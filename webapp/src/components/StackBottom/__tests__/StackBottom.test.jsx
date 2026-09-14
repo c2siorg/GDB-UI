@@ -5,7 +5,7 @@ import StackBottom from "../StackBottom.jsx";
 test("renders StackBottom component with headings", () => {
   render(<StackBottom />);
 
-  const heading = screen.getByText(/Registors/i);
+  const heading = screen.getByText(/Registers/i);
   expect(heading).toBeInTheDocument();
 
   const parts = ["func", "file", "addr", "args"];
