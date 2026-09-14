@@ -12,6 +12,11 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
+# Use the non-root node user provided by the base image
+RUN chown -R node:node /app
+
+USER node
+
 # Expose the port the frontend runs on
 EXPOSE 5173
 
