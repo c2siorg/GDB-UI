@@ -519,6 +519,11 @@ def handle_ws_disconnect():
         leave_room(session_id)
 
 
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'ok'})
+
+
 if __name__ == '__main__':
     from gevent import monkey
     monkey.patch_all(subprocess=False, select=False, os=False)
